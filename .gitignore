@@ -1,0 +1,27 @@
+# 数据文件（服务器自动生成）
+tasks_data.json
+
+# Python
+__pycache__/
+*.pyc
+
+# 视频文件（太大）
+*.mp4
+
+# 原始文档
+_策划书.docx
+_备份表.xlsx
+策划书.docx
+备份表.xlsx
+*_text.txt
+
+# 不相关文件
+祝福.docx
+send_wechat.py
+read_docx.ps1
+read_xlsx.ps1
+
+# Claude
+.claude/
+backup.xlsx
+plan.docx

@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第六届"红星杯"大学生创新创业大赛路演 — 时间逻辑顺序图</title>
+<style>
+/* ===== Design Tokens (Light) ===== */
+:root {
+  --surface-1: #fcfcfb;
+  --surface-2: #f5f4f1;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #8a8985;
+  --border: #dddcd8;
+  --border-light: #eae9e4;
+
+  /* Phase colors — categorical, fixed order */
+  --phase-1: #2a78d6; /* 通知报名 — blue */
+  --phase-2: #d9791a; /* 路演准备 — orange */
+  --phase-3: #c9354c; /* 路演当天 — red */
+  --phase-4: #2e8b57; /* 赛后总结 — green */
+  --phase-5: #7b4e9e; /* 决赛 — purple */
+
+  --phase-1-bg: #eef4fc;
+  --phase-2-bg: #fef6ee;
+  --phase-3-bg: #fdf0f2;
+  --phase-4-bg: #edf6f1;
+  --phase-5-bg: #f5f0f8;
+
+  --accent: #2a78d6;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-md: 0 2px 8px rgba(0,0,0,.08);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-1: #1a1a19;
+    --surface-2: #222220;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8a8980;
+    --border: #3a3a36;
+    --border-light: #2e2e2b;
+
+    --phase-1: #5599e8; --phase-2: #e89a3c; --phase-3: #e0556a;
+    --phase-4: #4ca878; --phase-5: #9b6fc0;
+
+    --phase-1-bg: #1b2530; --phase-2-bg: #2a2218;
+    --phase-3-bg: #2a1a1e; --phase-4-bg: #1a2820;
+    --phase-5-bg: #221c28;
+
+    --accent: #5599e8;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.25);
+    --shadow-md: 0 2px 8px rgba(0,0,0,.35);
+  }
+}
+
+/* ===== Reset & Base ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Header ===== */
+.header{
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 40px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.header-inner{ max-width: 1400px; margin: 0 auto; }
+.header h1{
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-bottom: 4px;
+}
+.header .subtitle{
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.header .meta-row{
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.header .meta-row span{ display: flex; align-items: center; gap: 6px; }
+
+/* ===== Milestone Cards ===== */
+.milestones{
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 28px 40px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.milestone{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  transition: box-shadow .15s;
+  cursor: default;
+}
+.milestone:hover{ box-shadow: var(--shadow-md); }
+.milestone .ms-date{
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+}
+.milestone .ms-title{
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ===== Main Container ===== */
+.main{ max-width: 1400px; margin: 0 auto; padding: 8px 40px 60px; }
+
+/* ===== Section ===== */
+.section{ margin-bottom: 40px; }
+.section-header{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.section-header h2{
+  font-size: 19px;
+  font-weight: 700;
+}
+.section-header .badge{
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  color: #fff;
+}
+
+/* ===== Gantt Chart ===== */
+.gantt{ overflow-x: auto; }
+.gantt-inner{ min-width: 900px; }
+
+/* Month header row */
+.gantt-months{
+  display: grid;
+  grid-template-columns: 200px repeat(11, 1fr);
+  gap: 0;
+  margin-bottom: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--border-light);
+}
+.gantt-months span{ padding: 4px 0; }
+
+/* Swimlane row */
+.gantt-row{
+  display: grid;
+  grid-template-columns: 200px repeat(11, 1fr);
+  gap: 0;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border-light);
+  min-height: 52px;
+}
+.gantt-row:last-child{ border-bottom: none; }
+.gantt-label{
+  padding: 12px 14px 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gantt-label .dot{
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.gantt-label .lbl{
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gantt-cell{
+  position: relative;
+  border-left: 1px solid var(--border-light);
+  min-height: 52px;
+  padding: 4px 2px;
+}
+.gantt-bar{
+  position: absolute;
+  top: 8px;
+  height: 36px;
+  border-radius: 4px;
+  opacity: .85;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  transition: opacity .15s, box-shadow .15s;
+  z-index: 1;
+}
+.gantt-bar:hover{
+  opacity: 1;
+  box-shadow: 0 1px 6px rgba(0,0,0,.25);
+  z-index: 10;
+}
+
+/* ===== Detail Timeline ===== */
+.timeline{ position: relative; padding-left: 28px; }
+.timeline::before{
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--border);
+  border-radius: 1px;
+}
+
+.tl-group{ margin-bottom: 28px; }
+.tl-group-header{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.tl-group-header::before{
+  content: '';
+  position: absolute;
+  left: -22px; top: 50%;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+.tl-group-header h3{
+  font-size: 16px;
+  font-weight: 700;
+}
+.tl-group-header .date-range{
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.tl-item{
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  margin-left: 12px;
+  transition: box-shadow .15s;
+}
+.tl-item:hover{ box-shadow: var(--shadow-sm); }
+.tl-item::before{
+  content: '';
+  position: absolute;
+  left: -17px; top: 18px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-1);
+}
+.tl-item .tl-top{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tl-item .tl-name{
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.tl-item .tl-date{
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tl-item .tl-meta{
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.tl-item .tl-dept{
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--phase-1-bg);
+  color: var(--phase-1);
+  white-space: nowrap;
+}
+.tl-item .tl-note{
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ===== Legend ===== */
+.legend{
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.legend-item{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot{
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ===== Filter Bar ===== */
+.filter-bar{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.filter-btn{
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.filter-btn:hover{ border-color: var(--accent); color: var(--accent); }
+.filter-btn.active{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ===== Toggle ===== */
+.toggle-section{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-section .arrow{
+  transition: transform .2s;
+  font-size: 10px;
+}
+.toggle-section.expanded .arrow{ transform: rotate(90deg); }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px){
+  .header{ padding: 20px 16px 16px; }
+  .header h1{ font-size: 20px; }
+  .milestones{ padding: 16px; grid-template-columns: 1fr 1fr; }
+  .main{ padding: 8px 16px 40px; }
+  .gantt{ display: none; } /* Hide Gantt on small screens */
+}
+
+/* ===== Task Checkbox & Owner ===== */
+.task-checkbox{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  min-width: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--surface-1);
+  transition: all .15s;
+  margin-right: 10px;
+  position: relative;
+  flex-shrink: 0;
+}
+.task-checkbox:hover{ border-color: var(--accent); }
+.task-checkbox:checked{
+  background: var(--phase-4);
+  border-color: var(--phase-4);
+}
+.task-checkbox:checked::after{
+  content: '';
+  position: absolute;
+  left: 5px; top: 1px;
+  width: 6px; height: 11px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Completed task */
+.task-done{ opacity: .55; }
+.task-done .tl-name{ text-decoration: line-through; text-decoration-thickness: 1px; }
+.task-done:hover{ opacity: .8; }
+
+/* Owner input */
+.tl-owner-wrap{
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+.tl-owner-input{
+  width: 90px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 11px;
+  font-family: inherit;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  transition: border-color .15s, width .15s;
+  outline: none;
+}
+.tl-owner-input:focus{
+  border-color: var(--accent);
+  width: 130px;
+}
+.tl-owner-input::placeholder{
+  color: var(--text-muted);
+  opacity: .6;
+}
+
+/* Completion stats bar */
+.stats-bar{
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.stats-bar .stat{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stats-bar .stat-num{
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+.progress-track{
+  flex: 1;
+  min-width: 150px;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill{
+  height: 100%;
+  background: var(--phase-4);
+  border-radius: 3px;
+  transition: width .3s ease;
+}
+
+/* Reset all button */
+.btn-reset{
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.btn-reset:hover{ border-color: var(--phase-3); color: var(--phase-3); }
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <div class="header-inner">
+    <h1>第六届"红星杯"大学生创新创业大赛路演</h1>
+    <div class="subtitle">时间逻辑顺序图 — 电子与通信工程系团学</div>
+    <div class="meta-row">
+      <span>📅 通知报名：2026年6月末 — 9月中旬</span>
+      <span>🎤 路演日期：2026年10月13日</span>
+      <span>🏆 决赛：2027年4月</span>
+      <span>📋 数据来源：策划书 + 备份表</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MILESTONES ===== -->
+<div class="milestones">
+  <div class="milestone">
+    <div class="ms-date">阶段一 · 6月 — 9月中</div>
+    <div class="ms-title">📢 通知与报名</div>
+  </div>
+  <div class="milestone">
+    <div class="ms-date">阶段二 · 7月 — 10月初</div>
+    <div class="ms-title">🔧 路演准备</div>
+  </div>
+  <div class="milestone">
+    <div class="ms-date">阶段三 · 10月12日 — 13日</div>
+    <div class="ms-title">🎤 路演现场</div>
+  </div>
+  <div class="milestone">
+    <div class="ms-date">阶段四 · 10月中下旬</div>
+    <div class="ms-title">📊 赛后总结</div>
+  </div>
+  <div class="milestone">
+    <div class="ms-date">阶段五 · 2027年4月</div>
+    <div class="ms-title">🏆 决赛</div>
+  </div>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main">
+
+<!-- ===== GANTT OVERVIEW ===== -->
+<div class="section">
+  <div class="section-header">
+    <h2>📊 全局甘特图</h2>
+    <span style="font-size:12px;color:var(--text-muted);">横向滚动查看完整时间线</span>
+  </div>
+  <div class="gantt">
+    <div class="gantt-inner">
+      <div class="gantt-months">
+        <span style="text-align:left;padding-left:14px;">工作流 / 月份</span>
+        <span>6月</span><span>7月</span><span>8月</span><span>9月</span>
+        <span>10月</span><span>11月</span>
+        <span>12-2月</span><span>3月</span><span>4月</span>
+        <span></span><span></span>
+      </div>
+
+      <!-- Phase 1: 通知报名 -->
+      <div class="gantt-row">
+        <div class="gantt-label"><span class="dot" style="background:var(--phase-1)"></span><span class="lbl">📢 通知与报名</span></div>
+        <div class="gantt-cell" style="grid-column:span 4"><div class="gantt-bar" style="left:0;right:0;background:var(--phase-1)">6月下旬 — 9月中旬</div></div>
+        <div class="gantt-cell" style="grid-column:span 8"></div>
+      </div>
+
+      <!-- Phase 2: 路演准备 -->
+      <div class="gantt-row">
+        <div class="gantt-label"><span class="dot" style="background:var(--phase-2)"></span><span class="lbl">🔧 路演准备</span></div>
+        <div class="gantt-cell"></div>
+        <div class="gantt-cell" style="grid-column:span 3"><div class="gantt-bar" style="left:0;right:0;background:var(--phase-2)">7月 — 10月初</div></div>
+        <div class="gantt-cell"></div>
+        <div class="gantt-cell" style="grid-column:span 7"></div>
+      </div>
+
+      <!-- Phase 3: 路演当天 -->
+      <div class="gantt-row">
+        <div class="gantt-label"><span class="dot" style="background:var(--phase-3)"></span><span class="lbl">🎤 路演当天</span></div>
+        <div class="gantt-cell" style="grid-column:span 4"></div>
+        <div class="gantt-cell"><div class="gantt-bar" style="left:0;right:0;background:var(--phase-3);font-size:11px;">10.12-13</div></div>
+        <div class="gantt-cell" style="grid-column:span 7"></div>
+      </div>
+
+      <!-- Phase 4: 赛后总结 -->
+      <div class="gantt-row">
+        <div class="gantt-label"><span class="dot" style="background:var(--phase-4)"></span><span class="lbl">📊 赛后总结</span></div>
+        <div class="gantt-cell" style="grid-column:span 4"></div>
+        <div class="gantt-cell" style="grid-column:span 2"><div class="gantt-bar" style="left:0;right:0;background:var(--phase-4)">10月中下旬</div></div>
+        <div class="gantt-cell" style="grid-column:span 6"></div>
+      </div>
+
+      <!-- Phase 5: 决赛 -->
+      <div class="gantt-row">
+        <div class="gantt-label"><span class="dot" style="background:var(--phase-5)"></span><span class="lbl">🏆 决赛</span></div>
+        <div class="gantt-cell" style="grid-column:span 8"></div>
+        <div class="gantt-cell"><div class="gantt-bar" style="left:0;right:0;background:var(--phase-5)">4月</div></div>
+        <div class="gantt-cell" style="grid-column:span 3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PHASE FILTER ===== -->
+<div class="section">
+  <div class="section-header"><h2>📋 详细任务时间线</h2></div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterPhase('all')">全部阶段</button>
+    <button class="filter-btn" onclick="filterPhase('p1')" style="border-color:var(--phase-1);color:var(--phase-1)">📢 通知报名</button>
+    <button class="filter-btn" onclick="filterPhase('p2')" style="border-color:var(--phase-2);color:var(--phase-2)">🔧 路演准备</button>
+    <button class="filter-btn" onclick="filterPhase('p3')" style="border-color:var(--phase-3);color:var(--phase-3)">🎤 路演现场</button>
+    <button class="filter-btn" onclick="filterPhase('p4')" style="border-color:var(--phase-4);color:var(--phase-4)">📊 赛后总结</button>
+    <button class="filter-btn" onclick="filterPhase('p5')" style="border-color:var(--phase-5);color:var(--phase-5)">🏆 决赛</button>
+  </div>
+
+  <!-- Progress stats -->
+  <div class="stats-bar">
+    <span style="font-weight:600;">📋 任务进度</span>
+    <span class="stat">已完成：<span class="stat-num" id="stat-done">—</span></span>
+    <span class="stat">完成率：<span class="stat-num" id="stat-pct">—</span></span>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <span id="sync-mode" style="font-size:11px;color:var(--text-muted)">💻 本地模式</span>
+    <span style="flex:1"></span>
+    <button class="btn-reset" onclick="resetAll()" title="清除所有完成状态和负责人记录">🔄 重置全部</button>
+  </div>
+
+  <div class="timeline" id="timeline">
+
+    <!-- ====== PHASE 1: 通知与报名 ====== -->
+    <div class="tl-group" data-phase="p1">
+      <div class="tl-group-header" style="--dot-color:var(--phase-1)">
+        <h3>📢 一、通知与报名</h3>
+        <span class="date-range">2026年6月 — 9月中旬</span>
+      </div>
+
+      <!-- 6月 -->
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:12px 0 8px 12px;padding-top:4px;">▎6月 · 前期准备</div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">撰写相关推送文案</span><span class="tl-date">6月19日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">宣传部排版并完成发布（待定）</span><span class="tl-date">6月30日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">院宣传部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">向各班发送报名通知、预热推送及报名群二维码</span><span class="tl-date">6月30日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">准备问卷星（a.初步统计报名意向 b.反馈相关意见 c.统计路演特殊需求如用电用网）</span><span class="tl-date">6月下旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">研究生办公室</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">梳理相关文件（含提交格式样例）</span><span class="tl-date">6月下旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">提前和老师沟通准备FTP服务器</span><span class="tl-date">6月下旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">设计项目报名表提交用的微信小程序</span><span class="tl-date">6月下旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span></div>
+      </div>
+
+      <!-- 7月 -->
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎7月 · 第一批预报名（除2026级）</div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">进行在校生预报名，建群、统计参赛队伍、发布通知/文件/报名表/格式要求</span><span class="tl-date">7月上旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">制作A类问卷星统计初步报名意向</span><span class="tl-date">7月20日 — 21日晚</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 宋卓鋆 ✓</span></div>
+        <div class="tl-note">主要包含去年报名表中的相关内容</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">编写微信通知版信息，统计相关数据</span><span class="tl-date">7月21日 — 21日晚</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 白抒玉 ✓</span></div>
+        <div class="tl-note">强调用于初步统计；队长和队伍信息非特殊情况尽量不改</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">梳理相关材料的提交格式要求</span><span class="tl-date">7月21日 — 22日晚</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">办公室</span><span style="font-size:11px;color:var(--text-muted);">👤 吴兴宇/梁灏/杨严杰 ✓</span></div>
+        <div class="tl-note">提交方式先不写，写后续另行通知；海报尺寸需和老师确认</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">发布统计预报名信息到群聊中进行收集</span><span class="tl-date">7月23日 — 26日中午</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 杨严杰 ✓</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">整理预报名信息</span><span class="tl-date">7月26日中午 — 27日 18:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 杨严杰 ✓</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">在群聊中发布材料的格式提交要求</span><span class="tl-date">7月28日 21:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 杨严杰 ✓</span></div>
+        <div class="tl-note">展架尺寸暂定60x90</div>
+      </div>
+
+      <!-- 8月 -->
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎8月 · 第二批预报名（2026级新生）</div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">在各系大一新生群发布报名信息，开展线上解答会议</span><span class="tl-date">8月上旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+        <div class="tl-note">提醒26级此为预报名，最终报名在9月中旬；主要通知渠道为各系新生导员</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">联系各班新生导员发布红星杯通知进行预报名</span><span class="tl-date">8月中上旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">办公室</span></div>
+        <div class="tl-note">与之前给23/24/25级发布的相同，可参考</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">在报名群中发送A类问卷星统计参赛意向</span><span class="tl-date">8月中下旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+
+      <!-- 9月 -->
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎9月 · 正式报名 & 信息汇总</div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">发布材料提交要求</span><span class="tl-date">9月1日左右</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">(未指定)</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">制作最终报名表提交小程序</span><span class="tl-date">9月1日 — 9月8日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">联系学院FTP服务器管理老师协调服务器</span><span class="tl-date">9月初 — 9月14日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span></div>
+        <div class="tl-note">先协商开通方式；等9月13日收到最终报名表核对后再分组开通</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">制作最终版报名表</span><span class="tl-date">9月4日 — 9月6日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 吴紫妮</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">⭐ 预报名截止，队长进入最终参赛群聊</span><span class="tl-date">9月6日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">整理第二批预报名信息（总预报名信息）</span><span class="tl-date">9月6日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 杨严杰</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">根据项目信息整理B类调查问卷（用电用网等需求）</span><span class="tl-date">9月6日 — 9月13日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">研究生部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">整理全部预报名信息后发到群聊让各队伍确认</span><span class="tl-date">9月7日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;color:var(--text-muted);">👤 杨严杰</span></div>
+        <div class="tl-note">确认无误后队长进入最终版参赛群聊</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">提交最终版报名表</span><span class="tl-date">9月7日 — 9月13日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">办公室</span><span style="font-size:11px;color:var(--text-muted);">👤 杨严杰</span></div>
+        <div class="tl-note">报名表上的信息用于项目组主海报制作；提交渠道：微信小程序</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">⭐ 最终报名截止，整理最终版报名表</span><span class="tl-date">9月13日 — 9月14日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">发布B类问卷星（含是否参加路演）</span><span class="tl-date">9月13日 — 9月14日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">研究生部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">⭐ B类问卷星截止</span><span class="tl-date">9月14日</span></div>
+        <div class="tl-meta"><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">整理参加路演的队伍，制作抽签小程序</span><span class="tl-date">9月14日 — 9月15日 15:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">确认参加路演的所有队伍</span><span class="tl-date">9月15日 15:00 — 20:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">研究生部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">⭐ 发布路演图以及顺序抽签</span><span class="tl-date">9月15日晚</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点 — 路演编号即为作品提交编号</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">制作路演现场位置图</span><span class="tl-date">9月15日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">信息技术部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">发布现场路演位置图及抽签小程序</span><span class="tl-date">9月15日 20:00 — 9月16日 12:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">信息技术部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">整理所有抽签队伍序号，不参加路演的排在最后</span><span class="tl-date">9月17日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">发布最终版参赛队伍项目信息到群聊确认</span><span class="tl-date">9月17日 — 9月18日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+        <div class="tl-note">确认无误后即为最终版项目提交编号</div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">发布项目信息提交要求及渠道（FTP服务器）</span><span class="tl-date">9月18日 — 9月21日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">组织部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">⭐ 提交最终版项目材料</span><span class="tl-date">9月20日 — 9月21日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">(参赛队伍)</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点 — FTP服务器提交</span></div>
+      </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">整理所有提交的项目信息，催促未提交队伍</span><span class="tl-date">9月21日 — 9月22日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
+      </div>
+    </div>
+
+    <!-- ====== PHASE 2: 路演准备 ====== -->
+    <div class="tl-group" data-phase="p2">
+      <div class="tl-group-header">
+        <h3>🔧 二、路演相关准备</h3>
+        <span class="date-range">2026年7月 — 10月初</span>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:12px 0 8px 12px;padding-top:4px;">▎7月 — 8月 · 活动设计与物料筹备</div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">现场活动设计初稿（7月底）→ 终稿（8月底）→ 确定方案（9月初）并联系厂家制作文创（拼图形式）</span><span class="tl-date">7月底 — 9月初</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">文艺部</span><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">生活权益部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">提交现场互动活动、文创方案初稿</span><span class="tl-date">8月中旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">文艺部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">提交现场活动设计方案终稿</span><span class="tl-date">8月底</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">文艺部</span></div>
+        <div class="tl-note">明确文创制作、互动环节细节</div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">确定方案后联系厂家制作文创产品</span><span class="tl-date">9月初</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">文艺部</span><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">生活权益部</span></div>
+        <div class="tl-note">文创用于路演当天观众互动奖品，兑奖处置换；集奖形式可用拼图</div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">大台子展板设计制作</span><span class="tl-date">暑假期间（项目最终材料提交前）</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">宣传部</span><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">信息技术部</span><span style="font-size:11px;color:var(--text-muted);">✓ 已解决</span></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎9月 · 宣传物料 & 场地准备</div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">⭐ 准备好所有路演相关材料</span><span class="tl-date">9月13日前</span></div>
+        <div class="tl-meta"><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点 — 与学院老师沟通/在外采购，详见材料清单</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">路演宣传推送文案撰写</span><span class="tl-date">9月18日 — 9月25日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">学术实践部</span></div>
+        <div class="tl-note">可能有好几期推送，含各项目具体信息；预留时间交院里审核</div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">面向各工作组发送相关通知</span><span class="tl-date">9月22日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">宣传部</span><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">文艺部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">⭐ 完成所有项目相关推送文案</span><span class="tl-date">9月24日</span></div>
+        <div class="tl-meta"><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 最晚不得晚于10月9日发布</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">路演宣传推送排版完成</span><span class="tl-date">9月28日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">系宣传部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">设计品清单：三折叠宣传册 / 教学楼1楼海报 / 易拉宝立牌 / 纸质版票据 / 项目组周边 / 宣发周边 / 官方展示海报模板 / 现场指引立牌 / 工作人员工作牌</span><span class="tl-date">(持续进行)</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">宣传部</span><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">信息技术部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">研究生办公室制作电子请柬</span><span class="tl-date">(持续)</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">研究生办公室</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">组织部准备路演抽签</span><span class="tl-date">9月中旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">组织部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">信息技术部制作路演现场位置图</span><span class="tl-date">9月15日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">信息技术部</span></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎10月初 · 最后冲刺</div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">制作路演电子请柬并发送</span><span class="tl-date">10月初</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">研究生办公室</span></div>
+        <div class="tl-note">提前制作，10月初左右发送</div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">制作路演指南手册（含目录、场馆介绍、流程安排等）</span><span class="tl-date">10月初</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">研究生办公室</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">专家打分表制作</span><span class="tl-date">10月9日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">办公室</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">⭐ 路演各项目宣传推送最终发布截止</span><span class="tl-date">10月9日前</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">院宣传部</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 关键节点 — 最晚截止日</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">体育部负责路演现场场地布置</span><span class="tl-date">10月上旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">体育部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">学术实践部准备路演当天总结推送</span><span class="tl-date">10月上旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">学术实践部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">工作人员工作牌的制作</span><span class="tl-date">10月上旬</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">(宣传部/信息技术部)</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">⭐ 发布活动介绍推送（含10.12食堂门口宣发 + 10.13现场活动安排）</span><span class="tl-date">10月12日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">宣传部</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 路演前1天</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">面向各系部发布路演相关推送及通知</span><span class="tl-date">10月12日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">宣传部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">生活权益部在食堂门口做文创预热（三折叠宣传册发放）</span><span class="tl-date">10月12日中午</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">生活权益部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">⭐ 提前一天布置现场：联系校外工程师傅、展架布置、一楼告示栏海报粘贴、一楼大屏放映、条幅布置、周边预热等</span><span class="tl-date">10月12日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">体育部</span><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">机动应急组</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🔴 路演前1天</span></div>
+      </div>
+      <div class="tl-item" data-phase="p2">
+        <div class="tl-top"><span class="tl-name">提前一天给各项目组发布相关通知</span><span class="tl-date">10月12日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-2-bg);color:var(--phase-2)">(工作组)</span></div>
+      </div>
+    </div>
+
+    <!-- ====== PHASE 3: 路演当天 ====== -->
+    <div class="tl-group" data-phase="p3">
+      <div class="tl-group-header">
+        <h3>🎤 三、路演当天 — 2026年10月13日</h3>
+        <span class="date-range">详细时间流程</span>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:12px 0 8px 12px;padding-top:4px;">▎上午 · 签到与准备</div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">⭐ 票务与服务组就位，参赛队伍进场签到、准备摊位</span><span class="tl-date">10:30</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">票务服务组</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🕐 签到开始</span></div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">票务与服务组为现场观众分发投票票据</span><span class="tl-date">11:25</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">票务服务组</span></div>
+        <div class="tl-note">准备五六个窗口分发选票，注意核对个人信息</div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">票务与服务组回收投票票据</span><span class="tl-date">11:25</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">票务服务组</span></div>
+        <div class="tl-note">注意核对票据信息，电子文档现场标注避免重票</div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">上午有课的队伍下课，12:00前到达摊位签到</span><span class="tl-date">11:40 — 12:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">票务服务组</span></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎中午 · 路演正式开始</div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">⭐ 路演正式开始！现场秩序组引导观众入场；与评委对接，引导评委老师对各组评分</span><span class="tl-date">12:00</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">现场秩序组</span><span style="font-size:11px;font-weight:600;color:var(--phase-3);">🎤 正式开始</span></div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">互动引导组管理兑奖处秩序，分时间段兑奖，提高难度系数保持现场人气</span><span class="tl-date">路演全程</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">互动引导组</span></div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">现场秩序组维护秩序、疏散拥堵、解答观众疑问</span><span class="tl-date">路演全程</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">现场秩序组</span></div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">摄像组拍摄：工作人员照/教师评委照/各项目组照/大展板前团队合照/互动区照/兑奖处照/投票领票处照</span><span class="tl-date">路演全程</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">摄像组</span></div>
+        <div class="tl-note">大展板前团队合照需预留工作人员进行登记</div>
+      </div>
+      <div class="tl-item" data-phase="p3">
+        <div class="tl-top"><span class="tl-name">机动应急组提前布置现场场地（胶带排布粘贴、指示牌放置、兑奖处/领票处凉亭布置）；及时跟进现场情况协调</span><span class="tl-date">路演全程</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-3-bg);color:var(--phase-3)">机动应急组</span></div>
+      </div>
+    </div>
+
+    <!-- ====== PHASE 4: 赛后总结 ====== -->
+    <div class="tl-group" data-phase="p4">
+      <div class="tl-group-header">
+        <h3>📊 四、初赛赛后总结</h3>
+        <span class="date-range">路演后 — 10月中下旬</span>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:12px 0 8px 12px;padding-top:4px;">▎计票工作</div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">筛选异常投票（重复学号等）</span><span class="tl-date">路演后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">票务服务组</span></div>
+      </div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">汇总统计评委老师给出的分数</span><span class="tl-date">路演后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">票务服务组</span></div>
+      </div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">统计路演各项目组得票情况 + 汇总统计路演得分</span><span class="tl-date">路演后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">票务服务组</span></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎场地清理</div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">清理打扫路演场地 / 桌椅展架送回指定地点 / 系内物品回收归还 / 海报等物品处理</span><span class="tl-date">路演结束后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">现场秩序组</span></div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin:16px 0 8px 12px;padding-top:4px;">▎总结与宣传</div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">完成初赛总结推送</span><span class="tl-date">路演后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">宣传部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">将初赛现场拍摄内容与优秀组别视频申报材料混合剪辑出决赛暖场视频</span><span class="tl-date">路演后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">信息技术部</span></div>
+      </div>
+      <div class="tl-item" data-phase="p4">
+        <div class="tl-top"><span class="tl-name">将现场拍摄的照片分发给个人</span><span class="tl-date">路演后</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">宣传部</span><span class="tl-dept" style="background:var(--phase-4-bg);color:var(--phase-4)">信息技术部</span></div>
+      </div>
+    </div>
+
+    <!-- ====== PHASE 5: 决赛 ====== -->
+    <div class="tl-group" data-phase="p5">
+      <div class="tl-group-header">
+        <h3>🏆 五、决赛</h3>
+        <span class="date-range">2027年4月（具体日期待定）</span>
+      </div>
+      <div class="tl-item" data-phase="p5">
+        <div class="tl-top"><span class="tl-name">⭐ 决赛</span><span class="tl-date">2027年4月</span></div>
+        <div class="tl-meta"><span style="font-size:11px;font-weight:600;color:var(--phase-5);">🏆 最终阶段 — 具体日期待定</span></div>
+        <div class="tl-note">策划书标注"具体日期待定"</div>
+      </div>
+    </div>
+
+  </div><!-- /timeline -->
+</div>
+
+<!-- ===== LEGEND ===== -->
+<div class="section">
+  <div class="section-header"><h2>🏷️ 阶段图例</h2></div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:var(--phase-1)"></span> 通知与报名 (6-9月)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--phase-2)"></span> 路演准备 (7-10月)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--phase-3)"></span> 路演当天 (10月13日)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--phase-4)"></span> 赛后总结 (10月中下旬)</div>
+    <div class="legend-item"><span class="legend-dot" style="background:var(--phase-5)"></span> 决赛 (2027年4月)</div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ===== Mode Detection =====
+const IS_SERVER = !!(window.location.hostname && window.location.hostname !== '');
+const API_BASE = IS_SERVER ? '' : null;
+const POLL_INTERVAL = 30000; // 30秒自动同步
+const STORAGE_PREFIX = 'hxb_2026_';
+
+function makeKey(el) {
+  const name = (el.querySelector('.tl-name')?.textContent || '').trim().slice(0, 60);
+  const date = (el.querySelector('.tl-date')?.textContent || '').trim();
+  return STORAGE_PREFIX + btoa(encodeURIComponent(name + '|' + date)).replace(/[+=/]/g, '');
+}
+
+// ===== API helpers (server mode) =====
+async function apiGetTasks() {
+  try {
+    const resp = await fetch(API_BASE + '/api/tasks');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  } catch(e) { console.warn('获取服务端数据失败:', e.message); return null; }
+}
+
+async function apiUpdateTask(key, done, owner) {
+  try {
+    const body = { key };
+    if (done !== undefined) body.done = done;
+    if (owner !== undefined) body.owner = owner;
+    await fetch(API_BASE + '/api/tasks', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+  } catch(e) { console.warn('提交到服务端失败:', e.message); }
+}
+
+async function apiReset() {
+  try {
+    await fetch(API_BASE + '/api/reset', { method: 'POST' });
+  } catch(e) { console.warn('重置服务端失败:', e.message); }
+}
+
+async function apiImport(tasks) {
+  try {
+    const resp = await fetch(API_BASE + '/api/import', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ tasks })
+    });
+    return await resp.json();
+  } catch(e) { console.warn('导入失败:', e.message); return null; }
+}
+
+// ===== Debounced owner update =====
+const ownerTimers = {};
+function debouncedOwnerUpdate(key, owner) {
+  if (ownerTimers[key]) clearTimeout(ownerTimers[key]);
+  ownerTimers[key] = setTimeout(() => {
+    localStorage.setItem(key + '_owner', owner);
+    if (IS_SERVER) apiUpdateTask(key, undefined, owner);
+  }, 600);
+}
+
+// ===== Inject UI into each task item =====
+function initTaskItems() {
+  document.querySelectorAll('.tl-item').forEach(item => {
+    const topEl = item.querySelector('.tl-top');
+    const metaEl = item.querySelector('.tl-meta');
+    const nameEl = item.querySelector('.tl-name');
+    if (!topEl || !metaEl || !nameEl) return;
+
+    const key = makeKey(item);
+
+    // --- Checkbox ---
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'task-checkbox';
+    checkbox.title = IS_SERVER ? '勾选后所有人可见' : '标记完成/未完成';
+    checkbox.dataset.key = key;
+
+    checkbox.addEventListener('change', () => {
+      localStorage.setItem(key + '_done', checkbox.checked);
+      item.classList.toggle('task-done', checkbox.checked);
+      updateStats();
+      if (IS_SERVER) apiUpdateTask(key, checkbox.checked, undefined);
+    });
+
+    topEl.insertBefore(checkbox, nameEl);
+
+    // --- Owner input ---
+    const ownerWrap = document.createElement('span');
+    ownerWrap.className = 'tl-owner-wrap';
+
+    const ownerIcon = document.createElement('span');
+    ownerIcon.textContent = '👤';
+    ownerIcon.style.fontSize = '11px';
+
+    const ownerInput = document.createElement('input');
+    ownerInput.type = 'text';
+    ownerInput.className = 'tl-owner-input';
+    ownerInput.placeholder = '填写负责人';
+    ownerInput.title = IS_SERVER ? '填写后所有人可见' : '填写该任务的负责人/联系人';
+    ownerInput.dataset.key = key;
+
+    ownerInput.addEventListener('input', () => {
+      debouncedOwnerUpdate(key, ownerInput.value);
+    });
+
+    ownerWrap.appendChild(ownerIcon);
+    ownerWrap.appendChild(ownerInput);
+    metaEl.appendChild(ownerWrap);
+  });
+}
+
+// ===== Apply state to all items =====
+function applyAllStates(stateMap) {
+  document.querySelectorAll('.tl-item').forEach(item => {
+    const key = makeKey(item);
+    const entry = stateMap[key];
+    const cb = item.querySelector('.task-checkbox');
+    const inp = item.querySelector('.tl-owner-input');
+
+    if (entry) {
+      if (cb) cb.checked = !!entry.done;
+      if (entry.done) item.classList.add('task-done'); else item.classList.remove('task-done');
+      if (inp && entry.owner) inp.value = entry.owner;
+    }
+    // Also save to localStorage for offline fallback
+    if (entry) {
+      if (entry.done) localStorage.setItem(key + '_done', 'true');
+      else localStorage.removeItem(key + '_done');
+      if (entry.owner) localStorage.setItem(key + '_owner', entry.owner);
+      else localStorage.removeItem(key + '_owner');
+    }
+  });
+}
+
+// ===== Load initial state =====
+async function loadInitialState() {
+  if (IS_SERVER) {
+    // 从服务器加载
+    const serverData = await apiGetTasks();
+    if (serverData && Object.keys(serverData).length > 0) {
+      applyAllStates(serverData);
+    } else {
+      // 服务器无数据，尝试从 localStorage 恢复并上传
+      loadFromLocalStorage();
+      await uploadLocalToServer();
+    }
+  } else {
+    // 本地模式：仅从 localStorage
+    loadFromLocalStorage();
+  }
+  updateStats();
+}
+
+function loadFromLocalStorage() {
+  const stateMap = {};
+  document.querySelectorAll('.tl-item').forEach(item => {
+    const key = makeKey(item);
+    const done = localStorage.getItem(key + '_done');
+    const owner = localStorage.getItem(key + '_owner');
+    if (done || owner) {
+      stateMap[key] = {};
+      if (done === 'true') stateMap[key].done = true;
+      if (owner) stateMap[key].owner = owner;
+    }
+  });
+  applyAllStates(stateMap);
+}
+
+async function uploadLocalToServer() {
+  if (!IS_SERVER) return;
+  const tasks = {};
+  document.querySelectorAll('.tl-item').forEach(item => {
+    const key = makeKey(item);
+    const done = localStorage.getItem(key + '_done');
+    const owner = localStorage.getItem(key + '_owner');
+    if (done || owner) {
+      tasks[key] = {};
+      if (done === 'true') tasks[key].done = true;
+      if (owner) tasks[key].owner = owner;
+    }
+  });
+  if (Object.keys(tasks).length > 0) {
+    const result = await apiImport(tasks);
+    if (result && result.imported > 0) {
+      showToast(`已上传 ${result.imported} 条本地数据到共享服务器`);
+    }
+  }
+}
+
+// ===== Stats =====
+function updateStats() {
+  const total = document.querySelectorAll('.tl-item').length;
+  const done = document.querySelectorAll('.task-checkbox:checked').length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('stat-done').textContent = `${done}/${total}`;
+  document.getElementById('stat-pct').textContent = `${pct}%`;
+  document.getElementById('progress-fill').style.width = `${pct}%`;
+
+  // Update mode indicator
+  const modeEl = document.getElementById('sync-mode');
+  if (modeEl) {
+    modeEl.textContent = IS_SERVER ? '🌐 共享模式' : '💻 本地模式';
+    modeEl.title = IS_SERVER ? '数据存储在服务器，所有人共享' : '数据仅存储在本地浏览器';
+  }
+}
+
+// ===== Sync =====
+async function syncNow(showMsg = true) {
+  if (!IS_SERVER) { showToast('本地模式下无需同步，数据在本机浏览器中'); return; }
+  const serverData = await apiGetTasks();
+  if (serverData) {
+    applyAllStates(serverData);
+    updateStats();
+    if (showMsg) showToast('已同步最新数据');
+  } else if (showMsg) {
+    showToast('同步失败，请检查网络');
+  }
+}
+
+// ===== Reset =====
+async function resetAll() {
+  const msg = IS_SERVER
+    ? '确定要清除服务器上所有完成状态和负责人记录吗？这将影响所有人。此操作不可恢复。'
+    : '确定要清除所有完成状态和负责人记录吗？此操作不可恢复。';
+  if (!confirm(msg)) return;
+
+  document.querySelectorAll('.tl-item').forEach(item => {
+    const key = makeKey(item);
+    localStorage.removeItem(key + '_done');
+    localStorage.removeItem(key + '_owner');
+    item.classList.remove('task-done');
+    const cb = item.querySelector('.task-checkbox');
+    if (cb) cb.checked = false;
+    const inp = item.querySelector('.tl-owner-input');
+    if (inp) inp.value = '';
+  });
+  if (IS_SERVER) await apiReset();
+  updateStats();
+  showToast('已重置全部数据');
+}
+
+// ===== Toast =====
+function showToast(msg) {
+  let toast = document.getElementById('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 20px;border-radius:100px;font-size:13px;z-index:999;transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+}
+
+// ===== Phase filter =====
+function filterPhase(phase) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.tl-group').forEach(group => {
+    group.style.display = (phase === 'all' || group.dataset.phase === phase) ? '' : 'none';
+  });
+}
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', async () => {
+  initTaskItems();
+  await loadInitialState();
+
+  // Add sync button to stats bar
+  const statsBar = document.querySelector('.stats-bar');
+  if (statsBar && IS_SERVER) {
+    const syncBtn = document.createElement('button');
+    syncBtn.className = 'btn-reset';
+    syncBtn.textContent = '🔄 同步';
+    syncBtn.title = '从服务器拉取最新数据';
+    syncBtn.onclick = () => syncNow(true);
+    syncBtn.style.borderColor = 'var(--accent)';
+    syncBtn.style.color = 'var(--accent)';
+    statsBar.appendChild(syncBtn);
+  }
+
+  // Auto-poll in server mode
+  if (IS_SERVER) {
+    setInterval(() => syncNow(false), POLL_INTERVAL);
+  }
+});
+</script>
+
+</body>
+</html>
