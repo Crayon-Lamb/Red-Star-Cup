@@ -513,6 +513,67 @@ body{
   transition: all .15s;
 }
 .btn-reset:hover{ border-color: var(--phase-3); color: var(--phase-3); }
+
+/* ===== Login overlay ===== */
+.login-overlay{
+  position: fixed;
+  inset: 0;
+  background: var(--surface-1);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.login-card{
+  text-align: center;
+  padding: 40px 36px;
+  max-width: 380px;
+  width: 90%;
+}
+.login-card h2{ font-size: 22px; margin-bottom: 4px; }
+.login-card .login-sub{ font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+.login-card input{
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: inherit;
+  text-align: center;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color .15s;
+  letter-spacing: .05em;
+}
+.login-card input:focus{ border-color: var(--accent); }
+.login-card .login-btn{
+  margin-top: 14px;
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s;
+}
+.login-card .login-btn:hover{ opacity: .85; }
+.login-card .login-err{
+  font-size: 13px;
+  color: var(--phase-3);
+  margin-top: 10px;
+  min-height: 20px;
+}
+.login-card .login-hint{
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 16px;
+}
 </style>
 </head>
 <body>
@@ -1089,7 +1150,8 @@ function makeKey(el) {
 // ===== API helpers (server mode) =====
 async function apiGetTasks() {
   try {
-    const resp = await fetch(API_BASE + '/api/tasks');
+    const resp = await fetch(API_BASE + '/api/tasks', { credentials: 'include' });
+    if (resp.status === 401) { handleAuthError(); return null; }
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return await resp.json();
   } catch(e) { console.warn('获取服务端数据失败:', e.message); return null; }
@@ -1100,17 +1162,20 @@ async function apiUpdateTask(key, done, owner) {
     const body = { key };
     if (done !== undefined) body.done = done;
     if (owner !== undefined) body.owner = owner;
-    await fetch(API_BASE + '/api/tasks', {
+    const resp = await fetch(API_BASE + '/api/tasks', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      credentials: 'include'
     });
+    if (resp.status === 401) { handleAuthError(); return; }
   } catch(e) { console.warn('提交到服务端失败:', e.message); }
 }
 
 async function apiReset() {
   try {
-    await fetch(API_BASE + '/api/reset', { method: 'POST' });
+    const resp = await fetch(API_BASE + '/api/reset', { method: 'POST', credentials: 'include' });
+    if (resp.status === 401) { handleAuthError(); return; }
   } catch(e) { console.warn('重置服务端失败:', e.message); }
 }
 
@@ -1119,10 +1184,74 @@ async function apiImport(tasks) {
     const resp = await fetch(API_BASE + '/api/import', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ tasks })
+      body: JSON.stringify({ tasks }),
+      credentials: 'include'
     });
+    if (resp.status === 401) { handleAuthError(); return null; }
     return await resp.json();
   } catch(e) { console.warn('导入失败:', e.message); return null; }
+}
+
+// ===== Login overlay (server mode only) =====
+let loginOverlay = null;
+
+function createLoginOverlay() {
+  if (loginOverlay) return;
+  loginOverlay = document.createElement('div');
+  loginOverlay.className = 'login-overlay';
+  loginOverlay.innerHTML = `
+    <div class="login-card">
+      <h2>🔐 需要密码</h2>
+      <div class="login-sub">第六届"红星杯"路演看板</div>
+      <input type="password" id="login-pwd" placeholder="请输入访问密码" autocomplete="off">
+      <button class="login-btn" id="login-btn">进入看板</button>
+      <div class="login-err" id="login-err"></div>
+      <div class="login-hint">密码由看板管理员设置</div>
+    </div>
+  `;
+  document.body.appendChild(loginOverlay);
+
+  const doLogin = async () => {
+    const pwd = document.getElementById('login-pwd').value;
+    const err = document.getElementById('login-err');
+    const btn = document.getElementById('login-btn');
+    if (!pwd) { err.textContent = '请输入密码'; return; }
+    btn.textContent = '验证中...';
+    btn.disabled = true;
+    try {
+      const resp = await fetch(API_BASE + '/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ password: pwd }),
+        credentials: 'include'
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        loginOverlay.remove();
+        loginOverlay = null;
+        await loadInitialState();
+        updateStats();
+      } else {
+        err.textContent = data.msg || '密码错误';
+      }
+    } catch(e) {
+      err.textContent = '网络错误，请重试';
+    }
+    btn.textContent = '进入看板';
+    btn.disabled = false;
+  };
+
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('login-pwd').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+}
+
+function handleAuthError() {
+  // 登录过期，重新显示登录框
+  if (IS_SERVER && !loginOverlay) {
+    createLoginOverlay();
+  }
 }
 
 // ===== Debounced owner update =====
@@ -1344,7 +1473,24 @@ function filterPhase(phase) {
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
   initTaskItems();
-  await loadInitialState();
+
+  if (IS_SERVER) {
+    // 检查是否已登录
+    try {
+      const resp = await fetch(API_BASE + '/api/check', { credentials: 'include' });
+      if (resp.ok) {
+        await loadInitialState();
+      } else {
+        createLoginOverlay();
+        loadFromLocalStorage(); // 先展示本地缓存
+      }
+    } catch(e) {
+      createLoginOverlay();
+      loadFromLocalStorage();
+    }
+  } else {
+    await loadInitialState();
+  }
 
   // Add sync button to stats bar
   const statsBar = document.querySelector('.stats-bar');
@@ -1363,6 +1509,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (IS_SERVER) {
     setInterval(() => syncNow(false), POLL_INTERVAL);
   }
+
+  updateStats();
 });
 </script>
 
