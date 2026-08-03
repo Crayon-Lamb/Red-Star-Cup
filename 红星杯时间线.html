@@ -875,7 +875,8 @@ body::before {
 	.dept-task.task-done{ opacity: .55; }
 	.dept-task.task-done .dept-task-name{ text-decoration: line-through; color: var(--text-muted); }
 	.dept-owner-input{
-	  width: 100px;
+	  min-width: 70px;
+	  width: 90px;
 	  padding: 6px 10px;
 	  font-size: 14px;
 	  font-weight: 500;
@@ -886,9 +887,9 @@ body::before {
 	  text-align: center;
 	  flex-shrink: 0;
 	  margin-left: auto;
-	  transition: border-color .2s, width .2s;
+	  transition: border-color .2s, width .15s;
 	}
-	.dept-owner-input:focus{ border-color: var(--accent); outline: none; width: 140px; }
+	.dept-owner-input:focus{ border-color: var(--accent); outline: none; }
 	.dept-owner-input::placeholder{ color: var(--text-muted); font-weight: 400; }
 </style>
 </head>
@@ -2328,7 +2329,7 @@ function buildDeptView() {
         h += '<span class="dept-task-date">📅 ' + escapeHtml(task.date) + '</span>';
         h += '<span class="dept-task-phase" style="background:' + pBg + ';color:' + pColor + '">' + pName + '</span>';
         h += '</div></div>';
-        h += '<input type="text" class="dept-owner-input" value="' + escapeHtml(deptOwner) + '" placeholder="负责人" title="' + escapeHtml(deptName) + ' 负责人" oninput="onDeptOwnerChange(\'' + taskKey + '\', \'' + escapeHtml(deptName) + '\', this.value)">';
+        h += '<input type="text" class="dept-owner-input" value="' + escapeHtml(deptOwner) + '" placeholder="负责人" title="' + escapeHtml(deptName) + ' 负责人" style="width:' + (deptOwner ? Math.min(Math.max(70, deptOwner.length * 14 + 20), 200) : 90) + 'px" oninput="this.style.width=Math.min(Math.max(70,Math.max(this.value.length,4)*14+20),200)+\'px\';onDeptOwnerChange(\'' + taskKey + '\', \'' + escapeHtml(deptName) + '\', this.value)">';
         h += '</div>';
       });
       h += '</div></div>';
