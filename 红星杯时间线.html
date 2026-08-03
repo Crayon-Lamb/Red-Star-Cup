@@ -1542,6 +1542,7 @@ const SUPABASE_HEADERS = {
 const POLL_INTERVAL = 10000;
 const STORAGE_PREFIX = 'hxb_2026_';
 const DEPT_LIST = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部'];
+const WORK_GROUP_LIST = ['票务服务组', '现场秩序组', '互动引导组', '机动应急组', '摄像组', '工作组'];
 
 function makeKey(el) {
   const name = (el.querySelector('.tl-name')?.textContent || '').trim().slice(0, 60);
@@ -1670,10 +1671,11 @@ function buildDeptSelector(item, key) {
   var tagsWrap = document.createElement('div');
   tagsWrap.className = 'tl-dept-tags';
 
-  // Dropdown panel
+  // Dropdown panel — use work groups for p3, departments for others
   var dropdown = document.createElement('div');
   dropdown.className = 'tl-dept-dropdown';
-  DEPT_LIST.forEach(function(d) {
+  var selectList = (phase === 'p3') ? WORK_GROUP_LIST : DEPT_LIST;
+  selectList.forEach(function(d) {
     var label = document.createElement('label');
     label.className = 'tl-dept-option';
     var cb = document.createElement('input');
@@ -1795,8 +1797,9 @@ function rebuildDeptOwnerRow(item, key) {
     var inp = document.createElement('input');
     inp.type = 'text';
     inp.className = 'tl-dept-owner-input';
-    inp.placeholder = '负责人';
-    inp.title = deptName + ' 负责人';
+    var isWG = (item.dataset.phase === 'p3');
+    inp.placeholder = isWG ? '组长' : '负责人';
+    inp.title = deptName + (isWG ? ' 组长' : ' 负责人');
 
     var saved = localStorage.getItem(deptOwnerKey);
     if (saved) { inp.value = saved; inp.style.width = Math.min(Math.max(60, saved.length * 14 + 16), 420) + 'px'; }
@@ -2370,7 +2373,9 @@ function buildDeptView() {
         h += '<span class="dept-task-date">📅 ' + escapeHtml(task.date) + '</span>';
         h += '<span class="dept-task-phase" style="background:' + pBg + ';color:' + pColor + '">' + pName + '</span>';
         h += '</div></div>';
-        h += '<input type="text" class="dept-owner-input" value="' + escapeHtml(deptOwner) + '" placeholder="负责人" title="' + escapeHtml(deptName) + ' 负责人" style="width:' + (deptOwner ? Math.min(Math.max(70, deptOwner.length * 14 + 20), 280) : 90) + 'px" oninput="this.style.width=Math.min(Math.max(70,Math.max(this.value.length,4)*14+20),420)+\'px\';onDeptOwnerChange(\'' + taskKey + '\', \'' + escapeHtml(deptName) + '\', this.value)">';
+        var isWorkGroup = WORK_GROUPS.indexOf(deptName) !== -1;
+        var ownerLabel = isWorkGroup ? '组长' : '负责人';
+        h += '<input type="text" class="dept-owner-input" value="' + escapeHtml(deptOwner) + '" placeholder="' + ownerLabel + '" title="' + escapeHtml(deptName) + ' ' + ownerLabel + '" style="width:' + (deptOwner ? Math.min(Math.max(70, deptOwner.length * 14 + 20), 280) : 90) + 'px" oninput="this.style.width=Math.min(Math.max(70,Math.max(this.value.length,4)*14+20),420)+\'px\';onDeptOwnerChange(\'' + taskKey + '\', \'' + escapeHtml(deptName) + '\', this.value)">';
         h += '</div>';
       });
       h += '</div></div>';
