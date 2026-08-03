@@ -551,6 +551,90 @@ body::before {
 }
 .tl-dept-input:focus{ border-style: solid; border-color: var(--accent); }
 
+/* ===== Multi-select Department Dropdown ===== */
+.tl-dept-selector{
+  position: relative;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tl-dept-trigger{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 100px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-1);
+  transition: border-color .15s;
+  user-select: none;
+  white-space: nowrap;
+}
+.tl-dept-trigger:hover{ border-color: var(--accent); }
+.tl-dept-trigger.open{ border-style: solid; border-color: var(--accent); color: var(--accent); }
+.tl-dept-trigger-arrow{ font-size: 10px; transition: transform .15s; }
+.tl-dept-trigger.open .tl-dept-trigger-arrow{ transform: rotate(180deg); }
+.tl-dept-tags{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tl-dept-tag{
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.tl-dept-tag .tag-remove{
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  opacity: .6;
+  margin-left: 2px;
+}
+.tl-dept-tag .tag-remove:hover{ opacity: 1; }
+.tl-dept-dropdown{
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  margin-top: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 0;
+  min-width: 190px;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35);
+  display: none;
+}
+.tl-dept-dropdown.open{ display: block; }
+.tl-dept-option{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background .1s;
+}
+.tl-dept-option:hover{ background: rgba(255,255,255,.06); }
+.tl-dept-option input[type="checkbox"]{
+  accent-color: var(--accent);
+  width: 15px; height: 15px;
+  cursor: pointer;
+}
+
 /* Completion stats bar */
 .stats-bar{
   display: flex;
@@ -1422,11 +1506,52 @@ const SUPABASE_HEADERS = {
 };
 const POLL_INTERVAL = 10000;
 const STORAGE_PREFIX = 'hxb_2026_';
+const DEPT_LIST = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部'];
 
 function makeKey(el) {
   const name = (el.querySelector('.tl-name')?.textContent || '').trim().slice(0, 60);
   const date = (el.querySelector('.tl-date')?.textContent || '').trim();
   return STORAGE_PREFIX + btoa(encodeURIComponent(name + '|' + date)).replace(/[+=/]/g, '');
+}
+
+// ===== Department data helpers =====
+function getTaskDepts(key) {
+  var saved = localStorage.getItem(key + '_depts');
+  if (saved) {
+    try { var arr = JSON.parse(saved); if (Array.isArray(arr)) return arr; } catch(e) {}
+  }
+  // Backward compat: migrate from old _dept key
+  var oldDept = localStorage.getItem(key + '_dept');
+  if (oldDept) {
+    var arr = [oldDept];
+    setTaskDepts(key, arr);
+    localStorage.removeItem(key + '_dept');
+    return arr;
+  }
+  return [];
+}
+
+function setTaskDepts(key, deptArray) {
+  localStorage.setItem(key + '_depts', JSON.stringify(deptArray));
+}
+
+function getNormalizedDepts(rawDepts) {
+  var normalized = [];
+  rawDepts.forEach(function(d) {
+    if (d === '院宣传部' || d === '系宣传部') {
+      if (normalized.indexOf('宣传部') === -1) normalized.push('宣传部');
+    } else if (d === '研究生部') {
+      if (normalized.indexOf('研究生办公室') === -1) normalized.push('研究生办公室');
+    } else if (d.indexOf('/') !== -1) {
+      d.replace(/[()]/g, '').split('/').forEach(function(part) {
+        var p = part.trim();
+        if (p && normalized.indexOf(p) === -1) normalized.push(p);
+      });
+    } else {
+      if (normalized.indexOf(d) === -1) normalized.push(d);
+    }
+  });
+  return normalized;
 }
 
 // ===== Supabase API =====
@@ -1438,12 +1563,16 @@ async function supabaseGetAll() {
   } catch(e) { console.warn('拉取云端数据失败:', e.message); return null; }
 }
 
-async function supabaseUpsert(id, done, owner) {
+async function supabaseUpsert(id, done, owner, depts) {
   try {
+    var body = { id: id };
+    if (done !== undefined) body.done = done;
+    if (owner !== undefined) body.owner = owner;
+    if (depts !== undefined) body.depts = depts;
     await fetch(SUPABASE_URL + '/rest/v1/tasks', {
       method: 'POST',
       headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'resolution=merge-duplicates' }),
-      body: JSON.stringify({ id: id, done: done, owner: owner })
+      body: JSON.stringify(body)
     });
   } catch(e) { console.warn('保存到云端失败:', e.message); }
 }
@@ -1473,13 +1602,204 @@ function saveDone(key, done) {
   supabaseUpsert(key, done, undefined);
 }
 
+// ===== Build multi-select department dropdown for a task =====
+function buildDeptSelector(item, key) {
+  var metaEl = item.querySelector('.tl-meta');
+  if (!metaEl) return;
+  var phase = item.dataset.phase || 'p1';
+
+  // Read initial departments from existing .tl-dept spans or localStorage
+  var initialDepts = getTaskDepts(key);
+  if (initialDepts.length === 0) {
+    var spans = metaEl.querySelectorAll('.tl-dept');
+    spans.forEach(function(sp) { var v = sp.textContent.trim(); if (v) initialDepts.push(v); });
+    // Also check .tl-dept-input (post makeDeptsEditable)
+    var inputs = metaEl.querySelectorAll('.tl-dept-input');
+    inputs.forEach(function(inp) { var v = inp.value.trim(); if (v && initialDepts.indexOf(v) === -1) initialDepts.push(v); });
+    if (initialDepts.length > 0) setTaskDepts(key, initialDepts);
+  }
+
+  // Remove old .tl-dept spans and .tl-dept-inputs from meta
+  metaEl.querySelectorAll('.tl-dept, .tl-dept-input').forEach(function(el) { el.remove(); });
+
+  // Create selector container
+  var selector = document.createElement('div');
+  selector.className = 'tl-dept-selector';
+
+  // Trigger button
+  var trigger = document.createElement('div');
+  trigger.className = 'tl-dept-trigger';
+  trigger.innerHTML = '<span class="tl-dept-trigger-text">+ 部门</span><span class="tl-dept-trigger-arrow">▾</span>';
+
+  // Tags container
+  var tagsWrap = document.createElement('div');
+  tagsWrap.className = 'tl-dept-tags';
+
+  // Dropdown panel
+  var dropdown = document.createElement('div');
+  dropdown.className = 'tl-dept-dropdown';
+  DEPT_LIST.forEach(function(d) {
+    var label = document.createElement('label');
+    label.className = 'tl-dept-option';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = d;
+    if (initialDepts.indexOf(d) !== -1) cb.checked = true;
+    label.appendChild(cb);
+    var txt = document.createElement('span');
+    txt.textContent = d;
+    label.appendChild(txt);
+    dropdown.appendChild(label);
+  });
+
+  // Refresh tags display
+  function refreshTags() {
+    tagsWrap.innerHTML = '';
+    var selected = [];
+    dropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) { selected.push(cb.value); });
+    selected.forEach(function(d) {
+      var tag = document.createElement('span');
+      tag.className = 'tl-dept-tag';
+      tag.style.background = 'var(--phase-' + phase.replace('p','') + '-bg)';
+      tag.style.color = 'var(--phase-' + phase.replace('p','') + ')';
+      tag.innerHTML = d + '<span class="tag-remove" data-dept="' + d + '">&times;</span>';
+      tagsWrap.appendChild(tag);
+    });
+    // Update trigger text
+    var triggerText = trigger.querySelector('.tl-dept-trigger-text');
+    triggerText.textContent = selected.length > 0 ? selected.length + '个部门' : '+ 部门';
+  }
+
+  // Bind remove tag clicks
+  tagsWrap.addEventListener('click', function(e) {
+    if (e.target.classList.contains('tag-remove')) {
+      var dept = e.target.dataset.dept;
+      var cb = dropdown.querySelector('input[value="' + dept + '"]');
+      if (cb) { cb.checked = false; onDeptChange(); }
+    }
+  });
+
+  // Toggle dropdown
+  trigger.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var isOpen = dropdown.classList.contains('open');
+    // Close all other dropdowns first
+    document.querySelectorAll('.tl-dept-dropdown.open').forEach(function(dd) { dd.classList.remove('open'); });
+    document.querySelectorAll('.tl-dept-trigger.open').forEach(function(tg) { tg.classList.remove('open'); });
+    if (!isOpen) {
+      dropdown.classList.add('open');
+      trigger.classList.add('open');
+    }
+  });
+
+  // Checkbox change handler
+  function onDeptChange() {
+    refreshTags();
+    var selected = [];
+    dropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) { selected.push(cb.value); });
+    setTaskDepts(key, selected);
+    rebuildDeptOwnerRow(item, key);
+    // Sync to Supabase (debounced)
+    if (deptSyncTimers[key]) clearTimeout(deptSyncTimers[key]);
+    deptSyncTimers[key] = setTimeout(function() {
+      supabaseUpsert(key, undefined, undefined, JSON.stringify(selected));
+    }, 500);
+  }
+
+  dropdown.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', onDeptChange);
+  });
+
+  // Click outside to close
+  document.addEventListener('click', function closeDropdown(e) {
+    if (!selector.contains(e.target)) {
+      dropdown.classList.remove('open');
+      trigger.classList.remove('open');
+    }
+  });
+
+  refreshTags();
+  selector.appendChild(trigger);
+  selector.appendChild(tagsWrap);
+  selector.appendChild(dropdown);
+  metaEl.appendChild(selector);
+}
+
+var deptSyncTimers = {};
+
+// ===== Rebuild per-department owner input row =====
+function rebuildDeptOwnerRow(item, key) {
+  // Remove existing owner row
+  var oldRow = item.querySelector('.tl-owner-row');
+  if (oldRow) oldRow.remove();
+
+  var depts = getTaskDepts(key);
+  // Also read from DOM tags if localStorage is empty but tags exist
+  if (depts.length === 0) {
+    item.querySelectorAll('.tl-dept-tag').forEach(function(tag) {
+      var t = tag.textContent.replace(/×/g, '').trim();
+      if (t && depts.indexOf(t) === -1) depts.push(t);
+    });
+  }
+
+  var normalizedDepts = getNormalizedDepts(depts);
+  if (normalizedDepts.length === 0) return;
+
+  var ownerRow = document.createElement('div');
+  ownerRow.className = 'tl-owner-row';
+
+  normalizedDepts.forEach(function(deptName) {
+    var deptOwnerKey = key + '_dept_owner_' + deptName;
+    var wrap = document.createElement('span');
+    wrap.className = 'tl-dept-owner-wrap';
+
+    var label = document.createElement('span');
+    label.className = 'tl-dept-owner-label';
+    label.textContent = deptName;
+
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'tl-dept-owner-input';
+    inp.placeholder = '负责人';
+    inp.title = deptName + ' 负责人';
+
+    var saved = localStorage.getItem(deptOwnerKey);
+    if (saved) { inp.value = saved; inp.style.width = Math.min(Math.max(60, saved.length * 14 + 16), 280) + 'px'; }
+
+    var timer;
+    inp.addEventListener('input', function() {
+      var val = inp.value;
+      inp.style.width = Math.min(Math.max(60, Math.max(val.length, 4) * 14 + 16), 280) + 'px';
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function() {
+        localStorage.setItem(deptOwnerKey, val);
+        // Sync to dept view
+        document.querySelectorAll('.dept-task[data-key="' + key + '"]').forEach(function(dt) {
+          var card = dt.closest('.dept-card');
+          if (card) {
+            var cardName = card.querySelector('.dept-name');
+            if (cardName && cardName.textContent.trim() === deptName) {
+              var di = dt.querySelector('.dept-owner-input');
+              if (di) di.value = val;
+            }
+          }
+        });
+      }, 400);
+    });
+
+    wrap.appendChild(label);
+    wrap.appendChild(inp);
+    ownerRow.appendChild(wrap);
+  });
+  item.appendChild(ownerRow);
+}
+
 // ===== Inject UI into each task item =====
 function initTaskItems() {
   document.querySelectorAll('.tl-item').forEach(function(item) {
     var topEl = item.querySelector('.tl-top');
-    var metaEl = item.querySelector('.tl-meta');
     var nameEl = item.querySelector('.tl-name');
-    if (!topEl || !metaEl || !nameEl) return;
+    if (!topEl || !nameEl) return;
     var key = makeKey(item);
 
     // --- Checkbox ---
@@ -1500,77 +1820,8 @@ function initTaskItems() {
     });
     topEl.insertBefore(checkbox, nameEl);
 
-    // --- Per-department owner inputs ---
-    // Collect department names for this task (read from .tl-dept-input or fallback to .tl-dept)
-    var deptInputs = item.querySelectorAll('.tl-dept-input');
-    var deptSpans = item.querySelectorAll('.tl-dept');
-    var deptNames = [];
-    if (deptInputs.length > 0) {
-      deptInputs.forEach(function(inp) { var v = inp.value.trim(); if (v) deptNames.push(v); });
-    } else if (deptSpans.length > 0) {
-      deptSpans.forEach(function(sp) { var v = sp.textContent.trim(); if (v) deptNames.push(v); });
-    }
-
-    // Normalize same as dept view
-    var normalizedDepts = [];
-    deptNames.forEach(function(d) {
-      if (d === '院宣传部' || d === '系宣传部') { if (normalizedDepts.indexOf('宣传部') === -1) normalizedDepts.push('宣传部'); }
-      else if (d === '研究生部') { if (normalizedDepts.indexOf('研究生办公室') === -1) normalizedDepts.push('研究生办公室'); }
-      else if (d.indexOf('/') !== -1) {
-        // Split combined dept names
-        d.replace(/[()]/g, '').split('/').forEach(function(part) {
-          var p = part.trim(); if (p && normalizedDepts.indexOf(p) === -1) normalizedDepts.push(p);
-        });
-      }
-      else { if (normalizedDepts.indexOf(d) === -1) normalizedDepts.push(d); }
-    });
-
-    // Create per-department owner row
-    var ownerRow = document.createElement('div');
-    ownerRow.className = 'tl-owner-row';
-    normalizedDepts.forEach(function(deptName) {
-      var deptOwnerKey = key + '_dept_owner_' + deptName;
-      var wrap = document.createElement('span');
-      wrap.className = 'tl-dept-owner-wrap';
-
-      var label = document.createElement('span');
-      label.className = 'tl-dept-owner-label';
-      label.textContent = deptName;
-
-      var inp = document.createElement('input');
-      inp.type = 'text';
-      inp.className = 'tl-dept-owner-input';
-      inp.placeholder = '负责人';
-      inp.title = deptName + ' 负责人';
-      // Load saved value
-      var saved = localStorage.getItem(deptOwnerKey);
-      if (saved) { inp.value = saved; inp.style.width = Math.min(Math.max(60, saved.length * 14 + 16), 280) + 'px'; }
-      // Debounced save + sync to dept view
-      var timer;
-      inp.addEventListener('input', function() {
-        var val = inp.value;
-        inp.style.width = Math.min(Math.max(60, Math.max(val.length, 4) * 14 + 16), 280) + 'px';
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(function() {
-          localStorage.setItem(deptOwnerKey, val);
-          // Sync to dept view
-          document.querySelectorAll('.dept-task[data-key="' + key + '"]').forEach(function(dt) {
-            var card = dt.closest('.dept-card');
-            if (card) {
-              var cardName = card.querySelector('.dept-name');
-              if (cardName && cardName.textContent.trim() === deptName) {
-                var di = dt.querySelector('.dept-owner-input');
-                if (di) di.value = val;
-              }
-            }
-          });
-        }, 400);
-      });
-      wrap.appendChild(label);
-      wrap.appendChild(inp);
-      ownerRow.appendChild(wrap);
-    });
-    item.appendChild(ownerRow);
+    // --- Multi-select department dropdown ---
+    buildDeptSelector(item, key);
   });
 }
 
@@ -1578,7 +1829,10 @@ function initTaskItems() {
 function removeHardcodedOwners() {
   document.querySelectorAll('.tl-meta').forEach(function(meta) {
     meta.querySelectorAll('span').forEach(function(span) {
-      if (!span.classList.contains('tl-dept') && !span.classList.contains('tl-owner-wrap') && span.textContent.match(/👤/)) {
+      if (!span.classList.contains('tl-dept')
+        && !span.classList.contains('tl-owner-wrap')
+        && !span.closest('.tl-dept-selector')
+        && span.textContent.match(/👤/)) {
         span.remove();
       }
     });
@@ -1659,6 +1913,9 @@ function applyAllStates(tasksArray) {
       item.classList.toggle('task-done', !!entry.done);
       localStorage.setItem(key + '_done', entry.done ? 'true' : 'false');
       if (entry.owner) localStorage.setItem(key + '_owner', entry.owner);
+      if (entry.depts) {
+        try { var deptsArr = JSON.parse(entry.depts); if (Array.isArray(deptsArr)) setTaskDepts(key, deptsArr); } catch(e) {}
+      }
     } else {
       var localDone = localStorage.getItem(key + '_done');
       if (cb) cb.checked = localDone === 'true';
@@ -1686,7 +1943,8 @@ async function uploadLocalToCloud() {
     var key = makeKey(items[i]);
     var done = localStorage.getItem(key + '_done');
     var owner = localStorage.getItem(key + '_owner');
-    if (done || owner) { await supabaseUpsert(key, done === 'true', owner || ''); count++; }
+    var depts = localStorage.getItem(key + '_depts');
+    if (done || owner || depts) { await supabaseUpsert(key, done === 'true', owner || '', depts || undefined); count++; }
   }
   if (count > 0) showToast('已上传 ' + count + ' 条本地数据到云端');
 }
@@ -1730,12 +1988,32 @@ async function resetAll() {
     ids.push(key);
     localStorage.removeItem(key + '_done');
     localStorage.removeItem(key + '_owner');
+    localStorage.removeItem(key + '_depts');
+    localStorage.removeItem(key + '_dept');
     item.classList.remove('task-done');
     var cb = item.querySelector('.task-checkbox');
     if (cb) cb.checked = false;
-    var inp = item.querySelector('.tl-owner-input');
-    if (inp) inp.value = '';
+    // Clear department owner inputs
+    item.querySelectorAll('.tl-dept-owner-input').forEach(function(inp) { inp.value = ''; });
+    // Remove owner row
+    var or = item.querySelector('.tl-owner-row');
+    if (or) or.remove();
+    // Reset dropdown checkboxes
+    var dd = item.querySelector('.tl-dept-dropdown');
+    if (dd) { dd.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; }); }
+    // Refresh tags
+    var tagsWrap = item.querySelector('.tl-dept-tags');
+    if (tagsWrap) tagsWrap.innerHTML = '';
+    var triggerText = item.querySelector('.tl-dept-trigger-text');
+    if (triggerText) triggerText.textContent = '+ 部门';
   });
+  // Also clear per-dept owner keys from localStorage
+  var deptOwnerKeys = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k.indexOf('_dept_owner_') !== -1 || k.endsWith('_depts') || k.endsWith('_dept')) deptOwnerKeys.push(k);
+  }
+  deptOwnerKeys.forEach(function(k) { localStorage.removeItem(k); });
   await supabaseDeleteAll(ids);
   updateStats();
   showToast('已重置全部数据');
@@ -1780,7 +2058,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   initTaskItems();
   removeHardcodedOwners();
-  makeDeptsEditable();
 
   // 一次性清除所有现存的负责人数据
   if (!localStorage.getItem('_owner_cleared_v2')) {
@@ -1943,15 +2220,18 @@ function buildDeptView() {
     var taskName = nameEl ? nameEl.textContent.trim() : '';
     var taskDate = dateEl ? dateEl.textContent.trim() : '';
 
-    // Get departments from inputs (post-init) or original spans (pre-init)
-    var deptInputs = item.querySelectorAll('.tl-dept-input');
-    var deptSpans = item.querySelectorAll('.tl-dept');
-    var depts = [];
-
-    if (deptInputs.length > 0) {
-      deptInputs.forEach(function(inp) { var v = inp.value.trim(); if (v) depts.push(v); });
-    } else if (deptSpans.length > 0) {
-      deptSpans.forEach(function(sp) { var v = sp.textContent.trim(); if (v) depts.push(v); });
+    // Get departments from localStorage or fallback to DOM
+    var taskKey = makeKeyFromData(taskName, taskDate);
+    var depts = getTaskDepts(taskKey);
+    if (depts.length === 0) {
+      // Fallback: read from dept tags or original spans
+      var deptTags = item.querySelectorAll('.tl-dept-tag');
+      if (deptTags.length > 0) {
+        deptTags.forEach(function(tag) { var v = tag.textContent.replace(/×/g, '').trim(); if (v && depts.indexOf(v) === -1) depts.push(v); });
+      } else {
+        var deptSpans = item.querySelectorAll('.tl-dept');
+        deptSpans.forEach(function(sp) { var v = sp.textContent.trim(); if (v && depts.indexOf(v) === -1) depts.push(v); });
+      }
     }
 
     if (depts.length === 0) depts = ['未分配部门'];
