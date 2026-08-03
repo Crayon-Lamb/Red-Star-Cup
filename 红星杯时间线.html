@@ -1760,6 +1760,9 @@ function buildDeptSelector(item, key) {
   selector.appendChild(tagsWrap);
   selector.appendChild(dropdown);
   metaEl.appendChild(selector);
+
+  // Initial build of per-department owner inputs
+  rebuildDeptOwnerRow(item, key);
 }
 
 var deptSyncTimers = {};
