@@ -430,6 +430,7 @@ body::before {
   .header h1{ font-size: 20px; }
   .milestones{ padding: 16px; grid-template-columns: 1fr 1fr; }
   .main{ padding: 8px 16px 40px; }
+  #dept-view.visible{ padding: 8px 16px 40px; }
   .gantt{ display: none; } /* Hide Gantt on small screens */
 }
 
@@ -772,7 +773,7 @@ body::before {
 
 	/* ===== Department View ===== */
 	#dept-view{ display: none; }
-#dept-view.visible{ display: block; }
+#dept-view.visible{ display: block; max-width: 1500px; margin: 0 auto; padding: 8px 24px 60px; }
 
 	.dept-summary{
 	  display: flex;
