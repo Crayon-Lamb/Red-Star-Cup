@@ -1799,12 +1799,12 @@ function rebuildDeptOwnerRow(item, key) {
     inp.title = deptName + ' 负责人';
 
     var saved = localStorage.getItem(deptOwnerKey);
-    if (saved) { inp.value = saved; inp.style.width = Math.min(Math.max(60, saved.length * 14 + 16), 280) + 'px'; }
+    if (saved) { inp.value = saved; inp.style.width = Math.min(Math.max(60, saved.length * 14 + 16), 420) + 'px'; }
 
     var timer;
     inp.addEventListener('input', function() {
       var val = inp.value;
-      inp.style.width = Math.min(Math.max(60, Math.max(val.length, 4) * 14 + 16), 280) + 'px';
+      inp.style.width = Math.min(Math.max(60, Math.max(val.length, 4) * 14 + 16), 420) + 'px';
       if (timer) clearTimeout(timer);
       timer = setTimeout(function() {
         localStorage.setItem(deptOwnerKey, val);
@@ -2206,7 +2206,7 @@ function onDeptOwnerChange(key, deptName, ownerValue) {
           var label = w.querySelector('.tl-dept-owner-label');
           if (label && label.textContent.trim() === deptName) {
             var inp = w.querySelector('.tl-dept-owner-input');
-            if (inp) { inp.value = ownerValue; inp.style.width = Math.min(Math.max(60, Math.max(ownerValue.length, 4) * 14 + 16), 280) + 'px'; }
+            if (inp) { inp.value = ownerValue; inp.style.width = Math.min(Math.max(60, Math.max(ownerValue.length, 4) * 14 + 16), 420) + 'px'; }
           }
         });
       }
@@ -2362,7 +2362,7 @@ function buildDeptView() {
         h += '<span class="dept-task-date">📅 ' + escapeHtml(task.date) + '</span>';
         h += '<span class="dept-task-phase" style="background:' + pBg + ';color:' + pColor + '">' + pName + '</span>';
         h += '</div></div>';
-        h += '<input type="text" class="dept-owner-input" value="' + escapeHtml(deptOwner) + '" placeholder="负责人" title="' + escapeHtml(deptName) + ' 负责人" style="width:' + (deptOwner ? Math.min(Math.max(70, deptOwner.length * 14 + 20), 200) : 90) + 'px" oninput="this.style.width=Math.min(Math.max(70,Math.max(this.value.length,4)*14+20),280)+\'px\';onDeptOwnerChange(\'' + taskKey + '\', \'' + escapeHtml(deptName) + '\', this.value)">';
+        h += '<input type="text" class="dept-owner-input" value="' + escapeHtml(deptOwner) + '" placeholder="负责人" title="' + escapeHtml(deptName) + ' 负责人" style="width:' + (deptOwner ? Math.min(Math.max(70, deptOwner.length * 14 + 20), 280) : 90) + 'px" oninput="this.style.width=Math.min(Math.max(70,Math.max(this.value.length,4)*14+20),420)+\'px\';onDeptOwnerChange(\'' + taskKey + '\', \'' + escapeHtml(deptName) + '\', this.value)">';
         h += '</div>';
       });
       h += '</div></div>';
