@@ -2274,13 +2274,15 @@ function buildDeptView() {
     // Normalize departments: merge variants, split combined names
     var isDDL = false;
     var isCollaboration = false;
+    var collabDepts = [];
     var normalized = [];
     depts.forEach(function(d) {
       // Remove wrapping parentheses
       var clean = d.replace(/^\(/, '').replace(/\)$/, '');
-      // Check for combined dept like "宣传部/信息技术部"
+      // Check for combined dept like "宣传部/信息技术部" (legacy format)
       if (clean.indexOf('/') !== -1 && clean.indexOf('宣传部') !== -1 && clean.indexOf('信息技术部') !== -1) {
         isCollaboration = true;
+        collabDepts = ['宣传部', '信息技术部'];
         if (normalized.indexOf('宣传部') === -1) normalized.push('宣传部');
         if (normalized.indexOf('信息技术部') === -1) normalized.push('信息技术部');
         return;
@@ -2290,10 +2292,15 @@ function buildDeptView() {
       else if (d === '研究生部') { if (normalized.indexOf('研究生办公室') === -1) normalized.push('研究生办公室'); }
       else { if (normalized.indexOf(d) === -1) normalized.push(d); }
     });
+    // Multi-department via new selector = collaboration
+    if (normalized.length > 1 && !isCollaboration) {
+      isCollaboration = true;
+      collabDepts = normalized.slice();
+    }
 
     normalized.forEach(function(dept) {
       if (!deptMap[dept]) deptMap[dept] = { tasks: [] };
-      deptMap[dept].tasks.push({ name: taskName, date: taskDate, phase: phase, isDDL: isDDL && dept === '宣传部', isCollaboration: isCollaboration });
+      deptMap[dept].tasks.push({ name: taskName, date: taskDate, phase: phase, isDDL: isDDL && dept === '宣传部', isCollaboration: isCollaboration, collabDepts: collabDepts });
     });
   });
 
@@ -2351,7 +2358,8 @@ function buildDeptView() {
         var deptOwner = localStorage.getItem(taskKey + '_dept_owner_' + deptName) || '';
         var badges = '';
         if (task.isDDL) badges += ' <span style="font-size:11px;font-weight:700;color:#e0556a;background:#221a26;padding:1px 6px;border-radius:100px;">⏰ DDL</span>';
-        if (task.isCollaboration) badges += ' <span style="font-size:11px;font-weight:700;color:#e89a3c;background:#1f2830;padding:1px 6px;border-radius:100px;">🤝 协作</span>';
+        if (task.isCollaboration && task.collabDepts && task.collabDepts.length > 1) badges += ' <span style="font-size:11px;font-weight:700;color:#e89a3c;background:#1f2830;padding:1px 6px;border-radius:100px;">🤝 ' + task.collabDepts.join(' + ') + '</span>';
+        else if (task.isCollaboration) badges += ' <span style="font-size:11px;font-weight:700;color:#e89a3c;background:#1f2830;padding:1px 6px;border-radius:100px;">🤝 协作</span>';
         var rowClass = (task.isDDL ? ' dept-task-ddl' : '') + (task.isCollaboration ? ' dept-task-collab' : '') + (isDone ? ' task-done' : '');
         h += '<div class="dept-task' + rowClass + '" data-key="' + taskKey + '">';
         h += '<input type="checkbox" class="dept-checkbox" ' + (isDone ? 'checked ' : '') + 'onclick="onDeptCheckboxChange(\'' + taskKey + '\', this.checked)" title="勾选完成">';
