@@ -1994,9 +1994,11 @@ async function uploadLocalToCloud() {
 
   // First pass: compute combined owners from per-dept owners
   var deptOwnerMap = {};
+  var deptOwnerKeyCount = 0;
   for (var j = 0; j < localStorage.length; j++) {
     var lk = localStorage.key(j);
     if (lk && lk.indexOf('_dept_owner_') !== -1) {
+      deptOwnerKeyCount++;
       var idx = lk.indexOf('_dept_owner_');
       var taskKey = lk.substring(0, idx);
       var val = localStorage.getItem(lk);
@@ -2008,6 +2010,7 @@ async function uploadLocalToCloud() {
       }
     }
   }
+  console.log('[上传] 找到 ' + deptOwnerKeyCount + ' 个部门负责人key, ' + Object.keys(deptOwnerMap).length + ' 个任务有负责人');
   // Save combined owners to localStorage
   Object.keys(deptOwnerMap).forEach(function(tk) {
     var combined = deptOwnerMap[tk].join(' / ');
@@ -2033,7 +2036,10 @@ async function uploadLocalToCloud() {
     var deptOwnersStr = hasDto ? JSON.stringify(dto) : undefined;
     if (done || owner || depts || deptOwnersStr) { await supabaseUpsert(key, done === 'true', owner || '', depts || undefined, deptOwnersStr); count++; }
   }
+  console.log('[上传] 共上传 ' + count + ' 条, 总任务 ' + items.length + ' 个');
   if (count > 0) showToast('已上传 ' + count + ' 条本地数据到云端');
+  else showToast('没有需要上传的数据，请先在页面中填写部门或负责人');
+}
 }
 
 // ===== Stats =====
