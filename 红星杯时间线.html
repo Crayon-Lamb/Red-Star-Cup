@@ -1599,13 +1599,12 @@ async function supabaseGetAll() {
   } catch(e) { console.warn('拉取云端数据失败:', e.message); return null; }
 }
 
-async function supabaseUpsert(id, done, owner, depts, deptOwners) {
+async function supabaseUpsert(id, done, owner, depts) {
   try {
     var body = { id: id };
     if (done !== undefined) body.done = done;
     if (owner !== undefined) body.owner = owner;
     if (depts !== undefined) body.depts = depts;
-    if (deptOwners !== undefined) body.dept_owners = deptOwners;
     await fetch(SUPABASE_URL + '/rest/v1/tasks', {
       method: 'POST',
       headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'resolution=merge-duplicates' }),
@@ -1960,14 +1959,6 @@ function applyAllStates(tasksArray) {
       if (entry.depts) {
         try { var deptsArr = JSON.parse(entry.depts); if (Array.isArray(deptsArr)) setTaskDepts(key, deptsArr); } catch(e) {}
       }
-      if (entry.dept_owners) {
-        try {
-          var dto = JSON.parse(entry.dept_owners);
-          Object.keys(dto).forEach(function(dn) {
-            localStorage.setItem(key + '_dept_owner_' + dn, dto[dn]);
-          });
-        } catch(e) {}
-      }
     } else {
       var localDone = localStorage.getItem(key + '_done');
       if (cb) cb.checked = localDone === 'true';
@@ -1994,11 +1985,9 @@ async function uploadLocalToCloud() {
 
   // First pass: compute combined owners from per-dept owners
   var deptOwnerMap = {};
-  var deptOwnerKeyCount = 0;
   for (var j = 0; j < localStorage.length; j++) {
     var lk = localStorage.key(j);
     if (lk && lk.indexOf('_dept_owner_') !== -1) {
-      deptOwnerKeyCount++;
       var idx = lk.indexOf('_dept_owner_');
       var taskKey = lk.substring(0, idx);
       var val = localStorage.getItem(lk);
@@ -2010,7 +1999,6 @@ async function uploadLocalToCloud() {
       }
     }
   }
-  console.log('[上传] 找到 ' + deptOwnerKeyCount + ' 个部门负责人key, ' + Object.keys(deptOwnerMap).length + ' 个任务有负责人');
   // Save combined owners to localStorage
   Object.keys(deptOwnerMap).forEach(function(tk) {
     var combined = deptOwnerMap[tk].join(' / ');
@@ -2022,24 +2010,9 @@ async function uploadLocalToCloud() {
     var done = localStorage.getItem(key + '_done');
     var owner = localStorage.getItem(key + '_owner');
     var depts = localStorage.getItem(key + '_depts');
-    // Build per-dept owner map
-    var dto = {};
-    var hasDto = false;
-    for (var jj = 0; jj < localStorage.length; jj++) {
-      var lk = localStorage.key(jj);
-      if (lk && lk.indexOf(key + '_dept_owner_') === 0) {
-        var dn = lk.substring(key.length + 12);
-        var dv = localStorage.getItem(lk);
-        if (dv && dv.trim()) { dto[dn] = dv.trim(); hasDto = true; }
-      }
-    }
-    var deptOwnersStr = hasDto ? JSON.stringify(dto) : undefined;
-    if (done || owner || depts || deptOwnersStr) { await supabaseUpsert(key, done === 'true', owner || '', depts || undefined, deptOwnersStr); count++; }
+    if (done || owner || depts) { await supabaseUpsert(key, done === 'true', owner || '', depts || undefined); count++; }
   }
-  console.log('[上传] 共上传 ' + count + ' 条, 总任务 ' + items.length + ' 个');
   if (count > 0) showToast('已上传 ' + count + ' 条本地数据到云端');
-  else showToast('没有需要上传的数据，请先在页面中填写部门或负责人');
-}
 }
 
 // ===== Stats =====
@@ -2416,12 +2389,6 @@ function syncTimelineOwner(key) {
     }
   });
   var combinedStr = combined.join(' / ');
-  // Build per-department owner map for cloud storage
-  var deptOwnerMap = {};
-  allDeptNames.forEach(function(dn) {
-    var o = localStorage.getItem(key + '_dept_owner_' + dn);
-    if (o && o.trim()) deptOwnerMap[dn] = o.trim();
-  });
   // Save combined owner to localStorage
   localStorage.setItem(key + '_owner', combinedStr);
   // Update timeline owner input if it exists
@@ -2434,8 +2401,8 @@ function syncTimelineOwner(key) {
       }
     }
   });
-  // Sync combined owner + per-dept owners to Supabase
-  supabaseUpsert(key, undefined, combinedStr, undefined, JSON.stringify(deptOwnerMap));
+  // Sync combined owner to Supabase
+  supabaseUpsert(key, undefined, combinedStr);
 }
 
 function buildDeptView() {
