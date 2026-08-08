@@ -2257,12 +2257,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   initTaskItems();
   removeHardcodedOwners();
 
-  // 一次性清除所有现存的负责人数据
-  if (!localStorage.getItem('_owner_cleared_v2')) {
-    clearAllOwnerData();
-    localStorage.setItem('_owner_cleared_v2', '1');
-  }
-
   loadFromLocalStorage();
   updateStats();
 
