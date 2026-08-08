@@ -2503,6 +2503,60 @@ function buildDeptView() {
     });
   });
 
+  // Date sort key: converts date string like "9月15日 20:00" to a comparable number
+  function getDateSortKey(dateStr) {
+    var s = dateStr.trim();
+
+    // 2027 → after all 2026 dates
+    if (s.indexOf('2027') !== -1) return 16040100;
+
+    // Special date strings
+    if (s === '路演全程') return 10131200;
+    if (s.indexOf('路演后') !== -1 || s.indexOf('路演结束') !== -1) return 10140000;
+    if (s.indexOf('暑假') !== -1) return 7150000;
+    if (s.indexOf('持续') !== -1) return 12310000;
+
+    // Time-only entries (路演当天, 10月13日)
+    if (/^\d{1,2}:\d{2}/.test(s)) {
+      var tm = s.match(/(\d+):(\d+)/);
+      return 10130000 + parseInt(tm[1]) * 100 + parseInt(tm[2]);
+    }
+
+    // Extract month (first occurrence for ranges)
+    var m = s.match(/(\d+)月/);
+    var month = m ? parseInt(m[1]) : 99;
+
+    // Extract day — first occurrence is the range start
+    var d = s.match(/(\d+)日/);
+    var day;
+    if (d) {
+      day = parseInt(d[1]);
+    } else {
+      // Fuzzy date indicators
+      if (s.indexOf('上旬') !== -1) day = 5;
+      else if (s.indexOf('中上旬') !== -1) day = 12;
+      else if (s.indexOf('中旬') !== -1) day = 15;
+      else if (s.indexOf('中下旬') !== -1) day = 22;
+      else if (s.indexOf('下旬') !== -1) day = 25;
+      else if (s.indexOf('初') !== -1) day = 3;
+      else if (s.indexOf('底') !== -1) day = 28;
+      else if (s.indexOf('前') !== -1 || s.indexOf('前后') !== -1) day = 28;
+      else day = 1;
+    }
+
+    // Time component
+    var timeNum = 0;
+    var tm2 = s.match(/(\d{1,2}):(\d{2})/);
+    if (tm2) {
+      timeNum = parseInt(tm2[1]) * 100 + parseInt(tm2[2]);
+    } else {
+      if (s.indexOf('晚') !== -1) timeNum = 2000;
+      else if (s.indexOf('中午') !== -1) timeNum = 1200;
+    }
+
+    return month * 1000000 + day * 10000 + timeNum;
+  }
+
   // Normalize department names
   var RENAME_MAP = { '票务与服务组': '票务服务组', '(工作组)': '工作组' };
   var finalMap = {};
@@ -2510,6 +2564,13 @@ function buildDeptView() {
     var target = RENAME_MAP[name] || name;
     if (!finalMap[target]) finalMap[target] = { tasks: [] };
     finalMap[target].tasks = finalMap[target].tasks.concat(deptMap[name].tasks);
+  });
+
+  // Sort each department's tasks by date
+  Object.keys(finalMap).forEach(function(deptName) {
+    finalMap[deptName].tasks.sort(function(a, b) {
+      return getDateSortKey(a.date) - getDateSortKey(b.date);
+    });
   });
 
   // Split into departments vs work groups (路演当天)
