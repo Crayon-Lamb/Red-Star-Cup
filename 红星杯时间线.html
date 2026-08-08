@@ -2053,6 +2053,10 @@ async function syncNow(showMsg) {
   var tasks = await supabaseGetAll();
   if (tasks) {
     applyAllStates(tasks);
+    // Rebuild per-department owner UI from synced data
+    document.querySelectorAll('.tl-item').forEach(function(item) {
+      rebuildDeptOwnerRow(item, makeKey(item));
+    });
     updateStats();
     if (showMsg) showToast('已从云端同步最新数据');
   } else if (showMsg) {
