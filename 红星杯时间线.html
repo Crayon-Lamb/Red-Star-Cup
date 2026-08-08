@@ -1599,12 +1599,13 @@ async function supabaseGetAll() {
   } catch(e) { console.warn('拉取云端数据失败:', e.message); return null; }
 }
 
-async function supabaseUpsert(id, done, owner, depts) {
+async function supabaseUpsert(id, done, owner, depts, deptOwners) {
   try {
     var body = { id: id };
     if (done !== undefined) body.done = done;
     if (owner !== undefined) body.owner = owner;
     if (depts !== undefined) body.depts = depts;
+    if (deptOwners !== undefined) body.dept_owners = deptOwners;
     await fetch(SUPABASE_URL + '/rest/v1/tasks', {
       method: 'POST',
       headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'resolution=merge-duplicates' }),
@@ -1959,6 +1960,14 @@ function applyAllStates(tasksArray) {
       if (entry.depts) {
         try { var deptsArr = JSON.parse(entry.depts); if (Array.isArray(deptsArr)) setTaskDepts(key, deptsArr); } catch(e) {}
       }
+      if (entry.dept_owners) {
+        try {
+          var dto = JSON.parse(entry.dept_owners);
+          Object.keys(dto).forEach(function(dn) {
+            localStorage.setItem(key + '_dept_owner_' + dn, dto[dn]);
+          });
+        } catch(e) {}
+      }
     } else {
       var localDone = localStorage.getItem(key + '_done');
       if (cb) cb.checked = localDone === 'true';
@@ -2010,7 +2019,19 @@ async function uploadLocalToCloud() {
     var done = localStorage.getItem(key + '_done');
     var owner = localStorage.getItem(key + '_owner');
     var depts = localStorage.getItem(key + '_depts');
-    if (done || owner || depts) { await supabaseUpsert(key, done === 'true', owner || '', depts || undefined); count++; }
+    // Build per-dept owner map
+    var dto = {};
+    var hasDto = false;
+    for (var jj = 0; jj < localStorage.length; jj++) {
+      var lk = localStorage.key(jj);
+      if (lk && lk.indexOf(key + '_dept_owner_') === 0) {
+        var dn = lk.substring(key.length + 12);
+        var dv = localStorage.getItem(lk);
+        if (dv && dv.trim()) { dto[dn] = dv.trim(); hasDto = true; }
+      }
+    }
+    var deptOwnersStr = hasDto ? JSON.stringify(dto) : undefined;
+    if (done || owner || depts || deptOwnersStr) { await supabaseUpsert(key, done === 'true', owner || '', depts || undefined, deptOwnersStr); count++; }
   }
   if (count > 0) showToast('已上传 ' + count + ' 条本地数据到云端');
 }
@@ -2395,6 +2416,12 @@ function syncTimelineOwner(key) {
     }
   });
   var combinedStr = combined.join(' / ');
+  // Build per-department owner map for cloud storage
+  var deptOwnerMap = {};
+  allDeptNames.forEach(function(dn) {
+    var o = localStorage.getItem(key + '_dept_owner_' + dn);
+    if (o && o.trim()) deptOwnerMap[dn] = o.trim();
+  });
   // Save combined owner to localStorage
   localStorage.setItem(key + '_owner', combinedStr);
   // Update timeline owner input if it exists
@@ -2407,8 +2434,8 @@ function syncTimelineOwner(key) {
       }
     }
   });
-  // Sync combined owner to Supabase
-  supabaseUpsert(key, undefined, combinedStr);
+  // Sync combined owner + per-dept owners to Supabase
+  supabaseUpsert(key, undefined, combinedStr, undefined, JSON.stringify(deptOwnerMap));
 }
 
 function buildDeptView() {
