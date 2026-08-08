@@ -1677,7 +1677,7 @@ function buildDeptSelector(item, key) {
   // Dropdown panel — use work groups for p3, departments for others
   var dropdown = document.createElement('div');
   dropdown.className = 'tl-dept-dropdown';
-  var selectList = (phase === 'p3') ? WORK_GROUP_LIST : DEPT_LIST;
+  var selectList = (phase === 'p3') ? WORK_GROUP_LIST : (phase === 'p4' || phase === 'p5') ? DEPT_LIST.concat(WORK_GROUP_LIST) : DEPT_LIST;
   selectList.forEach(function(d) {
     var label = document.createElement('label');
     label.className = 'tl-dept-option';
