@@ -1825,6 +1825,8 @@ function rebuildDeptOwnerRow(item, key) {
             }
           }
         });
+        // Sync combined owner to cloud
+        syncTimelineOwner(key);
       }, 400);
     });
 
@@ -1980,6 +1982,29 @@ function loadFromLocalStorage() {
 async function uploadLocalToCloud() {
   var items = document.querySelectorAll('.tl-item');
   var count = 0;
+
+  // First pass: compute combined owners from per-dept owners
+  var deptOwnerMap = {};
+  for (var j = 0; j < localStorage.length; j++) {
+    var lk = localStorage.key(j);
+    if (lk && lk.indexOf('_dept_owner_') !== -1) {
+      var idx = lk.indexOf('_dept_owner_');
+      var taskKey = lk.substring(0, idx);
+      var val = localStorage.getItem(lk);
+      if (val && val.trim()) {
+        if (!deptOwnerMap[taskKey]) deptOwnerMap[taskKey] = [];
+        if (deptOwnerMap[taskKey].indexOf(val.trim()) === -1) {
+          deptOwnerMap[taskKey].push(val.trim());
+        }
+      }
+    }
+  }
+  // Save combined owners to localStorage
+  Object.keys(deptOwnerMap).forEach(function(tk) {
+    var combined = deptOwnerMap[tk].join(' / ');
+    localStorage.setItem(tk + '_owner', combined);
+  });
+
   for (var i = 0; i < items.length; i++) {
     var key = makeKey(items[i]);
     var done = localStorage.getItem(key + '_done');
@@ -2233,6 +2258,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     syncBtn.style.color = 'var(--accent)';
     statsBar.appendChild(syncBtn);
 
+    var uploadBtn = document.createElement('button');
+    uploadBtn.className = 'btn-reset';
+    uploadBtn.textContent = '⬆️ 上传';
+    uploadBtn.title = '将本地全部数据推送到云端';
+    uploadBtn.onclick = function() { uploadLocalToCloud(); };
+    uploadBtn.style.borderColor = '#4ca878';
+    uploadBtn.style.color = '#4ca878';
+    statsBar.appendChild(uploadBtn);
+
     var exportBtn = document.createElement('button');
     exportBtn.className = 'btn-reset';
     exportBtn.textContent = '📥 导出';
@@ -2340,6 +2374,8 @@ function onDeptOwnerChange(key, deptName, ownerValue) {
         });
       }
     });
+    // Sync combined owner to cloud
+    syncTimelineOwner(key);
   }, 400);
 }
 
@@ -2359,17 +2395,20 @@ function syncTimelineOwner(key) {
     }
   });
   var combinedStr = combined.join(' / ');
-  // Update timeline owner input
+  // Save combined owner to localStorage
+  localStorage.setItem(key + '_owner', combinedStr);
+  // Update timeline owner input if it exists
   document.querySelectorAll('.tl-item').forEach(function(item) {
     if (makeKey(item) === key) {
       var inp = item.querySelector('.tl-owner-input');
-      if (inp && combinedStr) {
+      if (inp) {
         inp.value = combinedStr;
-        inp.style.width = Math.min(Math.max(90, combinedStr.length * 15 + 20), 400) + 'px';
-        localStorage.setItem(key + '_owner', combinedStr);
+        inp.style.width = Math.min(Math.max(90, Math.max(combinedStr.length, 4) * 15 + 20), 400) + 'px';
       }
     }
   });
+  // Sync combined owner to Supabase
+  supabaseUpsert(key, undefined, combinedStr);
 }
 
 function buildDeptView() {
