@@ -1544,8 +1544,11 @@ async function ensureCloudBase() {
   if (tcbReady) return true;
   try {
     const app = cloudbase.init({ env: TCB_ENV_ID, accessKey: TCB_PUBLISHABLE_KEY });
+    // 匿名登录
+    const { data, error } = await app.auth.signInAnonymously();
+    if (error) { console.error('匿名登录失败:', error); return false; }
+    console.log('匿名登录成功, uid:', data?.uid);
     tcbDb = app.database();
-    console.log('tcbDb 类型:', typeof tcbDb, tcbDb);
     tcbReady = true;
     console.log('CloudBase 初始化成功');
     return true;
