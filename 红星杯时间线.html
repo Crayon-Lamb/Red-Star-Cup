@@ -1543,7 +1543,7 @@ let tcbReady = false;
 async function ensureCloudBase() {
   if (tcbReady) return true;
   try {
-    const app = cloudbase.init({ env: TCB_ENV_ID, publishableKey: TCB_PUBLISHABLE_KEY });
+    const app = cloudbase.init({ env: TCB_ENV_ID, accessKey: TCB_PUBLISHABLE_KEY });
     tcbDb = app.database();
     console.log('tcbDb 类型:', typeof tcbDb, tcbDb);
     tcbReady = true;
