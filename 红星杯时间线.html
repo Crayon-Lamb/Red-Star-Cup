@@ -1958,12 +1958,21 @@ function applyAllStates(tasksArray) {
       if (cb) cb.checked = !!entry.done;
       item.classList.toggle('task-done', !!entry.done);
       localStorage.setItem(key + '_done', entry.done ? 'true' : 'false');
-      if (entry.owner) localStorage.setItem(key + '_owner', entry.owner);
+      if (entry.owner !== undefined) localStorage.setItem(key + '_owner', entry.owner);
       if (entry.depts) {
         try { var deptsArr = JSON.parse(entry.depts); if (Array.isArray(deptsArr)) setTaskDepts(key, deptsArr); } catch(e) {}
       }
       if (entry.dept_owners) {
         try {
+          // 先清除该任务的所有旧部门负责人记录，防止删除后残留
+          var dtoOwnerPrefix = key + '_dept_owner_';
+          var staleOwnerKeys = [];
+          for (var li = 0; li < localStorage.length; li++) {
+            var lk = localStorage.key(li);
+            if (lk && lk.indexOf(dtoOwnerPrefix) === 0) staleOwnerKeys.push(lk);
+          }
+          staleOwnerKeys.forEach(function(sk) { localStorage.removeItem(sk); });
+          // 写入新的部门负责人
           var dto = JSON.parse(entry.dept_owners);
           Object.keys(dto).forEach(function(dn) {
             localStorage.setItem(key + '_dept_owner_' + dn, dto[dn]);
