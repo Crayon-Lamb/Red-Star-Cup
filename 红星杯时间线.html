@@ -1533,12 +1533,12 @@ body::before {
 </div><!-- /main -->
 
 <script>
-// ===== Supabase 配置 =====
-const SUPABASE_URL = 'https://wgfdezkdgnnygprdaics.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnZmRlemtkZ25ueWdwcmRhaWNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1NjI2NDMsImV4cCI6MjEwMTEzODY0M30.Hv18lWc2JpNa7CsGw6QgCKPfZuTb3nak7XyxkpE6tCU';
-const SUPABASE_HEADERS = {
-  'apikey': SUPABASE_KEY,
-  'Authorization': 'Bearer ' + SUPABASE_KEY,
+// ===== CloudBase 配置（国内服务器） =====
+const TCB_ENV_ID = 'red-star-cup-d4gewho6z2b5b577c';
+const TCB_PUBLISHABLE_KEY = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjI1YTkwNTNiLTg5NzAtNDRlNy05N2JhLWQxZmE4Yjg3ZGI5MSJ9.eyJpc3MiOiJodHRwczovL3JlZC1zdGFyLWN1cC1kNGdld2hvNnoyYjViNTc3Yy5hcC1zaGFuZ2hhaS50Y2ItYXBpLnRlbmNlbnRjbG91ZGFwaS5jb20iLCJzdWIiOiJhbm9uIiwiYXVkIjoicmVkLXN0YXItY3VwLWRkNGdld2hvNnoyYjViNTc3YyIsImV4cCI6NDA4OTk3MzMwMywiaWF0IjoxNzg2MjkwMTAzLCJub25jZSI6ImJKSV8ybnpPUUhpLWw0Zktad0lMaVEiLCJhdF9oYXNoIjoiYkpJXzJuek9RSGktbDRmS1p3SUxpUSIsIm5hbWUiOiJBbm9ueW1vdXMiLCJzY29wZSI6ImFub255bW91cyIsInByb2plY3RfaWQiOiJyZWQtc3Rhci1jdXAtZDRnZXdobzZ6MmI1YjU3N2MiLCJtZXRhIjp7InBsYXRmb3JtIjoiUHVibGlzaGFibGVLZXkifSwicm9sZSI6ImFub24iLCJpc19hbm9ueW1vdXMiOnRydWUsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImFub255bW91cyIsInByb3ZpZGVycyI6WyJhbm9ueW1vdXMiXX0sInVzZXJfbWV0YWRhdGEiOnsibmFtZSI6IkFub255bW91cyJ9LCJ1c2VyX3R5cGUiOiIiLCJjbGllbnRfdHlwZSI6ImNsaWVudF91c2VyIiwiaXNfc3lzdGVtX2FkbWluIjpmYWxzZX0.O1-wxIIJKi8oPMH9Ec6JMkuZLMgqZkb8JAA9BDxzfLJNWd0eYV3mdhfpwdhshJaJ3Ricy9QBWZodifXk8kaXJTZs91sx2PFsesyE6FNIjIAmW7L6meeKftOZ5JcR5unZVfQyeo__CA_dxlhAgxFJJE9J6MUnsdz9oOo7oK_pkIX29J5r2iWr90uA4vnl5xvMKCpnAOviw-BXlIXdELJK3wCZcr2Wv0Cp7_dMfR5_2156Axju3jS1_4AKgHkMxqpT5ElcgT_9pFEzyiBzVjUcVqKoxepb0g59iQI54h1HLX3Q5iZgL-KDYm1h7kFUz4yw8XNT0Jh2XkC5KNvBtHAd_w';
+const TCB_API_BASE = 'https://' + TCB_ENV_ID + '.api.tcloudbasegateway.com/v1/rdb/rest';
+const TCB_HEADERS = {
+  'Authorization': 'Bearer ' + TCB_PUBLISHABLE_KEY,
   'Content-Type': 'application/json'
 };
 const POLL_INTERVAL = 10000;
@@ -1592,10 +1592,10 @@ function getNormalizedDepts(rawDepts) {
   return normalized;
 }
 
-// ===== Supabase API =====
+// ===== CloudBase API =====
 async function supabaseGetAll() {
   try {
-    const resp = await fetch(SUPABASE_URL + '/rest/v1/tasks?select=*', { headers: SUPABASE_HEADERS });
+    const resp = await fetch(TCB_API_BASE + '/tasks?select=*', { headers: TCB_HEADERS });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     return await resp.json();
   } catch(e) { console.warn('拉取云端数据失败:', e.message); return null; }
@@ -1608,9 +1608,9 @@ async function supabaseUpsert(id, done, owner, depts, deptOwners) {
     if (owner !== undefined) body.owner = owner;
     if (depts !== undefined) body.depts = depts;
     if (deptOwners !== undefined) body.dept_owners = deptOwners;
-    await fetch(SUPABASE_URL + '/rest/v1/tasks', {
+    await fetch(TCB_API_BASE + '/tasks', {
       method: 'POST',
-      headers: Object.assign({}, SUPABASE_HEADERS, { 'Prefer': 'resolution=merge-duplicates' }),
+      headers: Object.assign({}, TCB_HEADERS, { 'Prefer': 'resolution=merge-duplicates' }),
       body: JSON.stringify(body)
     });
   } catch(e) { console.warn('保存到云端失败:', e.message); }
@@ -1619,8 +1619,8 @@ async function supabaseUpsert(id, done, owner, depts, deptOwners) {
 async function supabaseDeleteAll(ids) {
   for (var i = 0; i < ids.length; i++) {
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/tasks?id=eq.' + encodeURIComponent(ids[i]), {
-        method: 'DELETE', headers: SUPABASE_HEADERS
+      await fetch(TCB_API_BASE + '/tasks?id=eq.' + encodeURIComponent(ids[i]), {
+        method: 'DELETE', headers: TCB_HEADERS
       });
     } catch(e) {}
   }
