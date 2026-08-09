@@ -1544,13 +1544,13 @@ async function ensureCloudBase() {
   if (tcbReady) return true;
   try {
     const app = cloudbase.init({ env: TCB_ENV_ID, publishableKey: TCB_PUBLISHABLE_KEY });
-    // 尝试先用 publishableKey 直接访问（无需匿名登录）
     tcbDb = app.database();
+    console.log('tcbDb 类型:', typeof tcbDb, tcbDb);
     tcbReady = true;
     console.log('CloudBase 初始化成功');
     return true;
   } catch(e) {
-    console.error('CloudBase 初始化失败:', e);
+    console.error('CloudBase 初始化失败:', e, JSON.stringify(e));
     return false;
   }
 }
@@ -1610,9 +1610,10 @@ async function supabaseGetAll() {
   if (!tcbReady) { console.warn('CloudBase 未就绪'); return null; }
   try {
     const res = await tcbDb.collection('tasks').limit(1000).get();
+    console.log('supabaseGetAll 原始返回:', JSON.stringify(res));
     if (!res || !res.data) return [];
     return res.data;
-  } catch(e) { console.warn('拉取云端数据失败:', e.message); return null; }
+  } catch(e) { console.warn('拉取云端数据失败:', e, JSON.stringify(e)); return null; }
 }
 
 async function supabaseUpsert(id, done, owner, depts, deptOwners) {
