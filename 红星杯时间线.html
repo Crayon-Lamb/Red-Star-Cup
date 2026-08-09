@@ -1544,8 +1544,7 @@ async function ensureCloudBase() {
   if (tcbReady) return true;
   try {
     const app = cloudbase.init({ env: TCB_ENV_ID, publishableKey: TCB_PUBLISHABLE_KEY });
-    const auth = app.auth({ persistence: 'local' });
-    await auth.signInAnonymously();
+    // 尝试先用 publishableKey 直接访问（无需匿名登录）
     tcbDb = app.database();
     tcbReady = true;
     console.log('CloudBase 初始化成功');
