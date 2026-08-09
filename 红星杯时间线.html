@@ -1532,15 +1532,29 @@ body::before {
 
 </div><!-- /main -->
 
+<script src="https://web.sdk.qcloud.com/cloudbase-js-sdk/2.0.0/cloudbase.full.js"></script>
 <script>
-// ===== CloudBase 配置（国内服务器） =====
+// ===== CloudBase SDK 配置（国内服务器） =====
 const TCB_ENV_ID = 'red-star-cup-d4gewho6z2b5b577c';
 const TCB_PUBLISHABLE_KEY = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjI1YTkwNTNiLTg5NzAtNDRlNy05N2JhLWQxZmE4Yjg3ZGI5MSJ9.eyJpc3MiOiJodHRwczovL3JlZC1zdGFyLWN1cC1kNGdld2hvNnoyYjViNTc3Yy5hcC1zaGFuZ2hhaS50Y2ItYXBpLnRlbmNlbnRjbG91ZGFwaS5jb20iLCJzdWIiOiJhbm9uIiwiYXVkIjoicmVkLXN0YXItY3VwLWRkNGdld2hvNnoyYjViNTc3YyIsImV4cCI6NDA4OTk3MzMwMywiaWF0IjoxNzg2MjkwMTAzLCJub25jZSI6ImJKSV8ybnpPUUhpLWw0Zktad0lMaVEiLCJhdF9oYXNoIjoiYkpJXzJuek9RSGktbDRmS1p3SUxpUSIsIm5hbWUiOiJBbm9ueW1vdXMiLCJzY29wZSI6ImFub255bW91cyIsInByb2plY3RfaWQiOiJyZWQtc3Rhci1jdXAtZDRnZXdobzZ6MmI1YjU3N2MiLCJtZXRhIjp7InBsYXRmb3JtIjoiUHVibGlzaGFibGVLZXkifSwicm9sZSI6ImFub24iLCJpc19hbm9ueW1vdXMiOnRydWUsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImFub255bW91cyIsInByb3ZpZGVycyI6WyJhbm9ueW1vdXMiXX0sInVzZXJfbWV0YWRhdGEiOnsibmFtZSI6IkFub255bW91cyJ9LCJ1c2VyX3R5cGUiOiIiLCJjbGllbnRfdHlwZSI6ImNsaWVudF91c2VyIiwiaXNfc3lzdGVtX2FkbWluIjpmYWxzZX0.O1-wxIIJKi8oPMH9Ec6JMkuZLMgqZkb8JAA9BDxzfLJNWd0eYV3mdhfpwdhshJaJ3Ricy9QBWZodifXk8kaXJTZs91sx2PFsesyE6FNIjIAmW7L6meeKftOZ5JcR5unZVfQyeo__CA_dxlhAgxFJJE9J6MUnsdz9oOo7oK_pkIX29J5r2iWr90uA4vnl5xvMKCpnAOviw-BXlIXdELJK3wCZcr2Wv0Cp7_dMfR5_2156Axju3jS1_4AKgHkMxqpT5ElcgT_9pFEzyiBzVjUcVqKoxepb0g59iQI54h1HLX3Q5iZgL-KDYm1h7kFUz4yw8XNT0Jh2XkC5KNvBtHAd_w';
-const TCB_API_BASE = 'https://' + TCB_ENV_ID + '.api.tcloudbasegateway.com/v1/rdb/rest';
-const TCB_HEADERS = {
-  'Authorization': 'Bearer ' + TCB_PUBLISHABLE_KEY,
-  'Content-Type': 'application/json'
-};
+let tcbDb = null;
+let tcbReady = false;
+
+async function ensureCloudBase() {
+  if (tcbReady) return true;
+  try {
+    const app = cloudbase.init({ env: TCB_ENV_ID, publishableKey: TCB_PUBLISHABLE_KEY });
+    const auth = app.auth({ persistence: 'local' });
+    await auth.signInAnonymously();
+    tcbDb = app.database();
+    tcbReady = true;
+    console.log('CloudBase 初始化成功');
+    return true;
+  } catch(e) {
+    console.error('CloudBase 初始化失败:', e);
+    return false;
+  }
+}
 const POLL_INTERVAL = 10000;
 const STORAGE_PREFIX = 'hxb_2026_';
 const DEPT_LIST = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部'];
@@ -1592,36 +1606,42 @@ function getNormalizedDepts(rawDepts) {
   return normalized;
 }
 
-// ===== CloudBase API =====
+// ===== CloudBase API（文档数据库） =====
 async function supabaseGetAll() {
+  if (!tcbReady) { console.warn('CloudBase 未就绪'); return null; }
   try {
-    const resp = await fetch(TCB_API_BASE + '/tasks?select=*', { headers: TCB_HEADERS });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    return await resp.json();
+    const res = await tcbDb.collection('tasks').limit(1000).get();
+    if (!res || !res.data) return [];
+    return res.data;
   } catch(e) { console.warn('拉取云端数据失败:', e.message); return null; }
 }
 
 async function supabaseUpsert(id, done, owner, depts, deptOwners) {
+  if (!tcbReady) return;
   try {
-    var body = { id: id };
-    if (done !== undefined) body.done = done;
-    if (owner !== undefined) body.owner = owner;
-    if (depts !== undefined) body.depts = depts;
-    if (deptOwners !== undefined) body.dept_owners = deptOwners;
-    await fetch(TCB_API_BASE + '/tasks', {
-      method: 'POST',
-      headers: Object.assign({}, TCB_HEADERS, { 'Prefer': 'resolution=merge-duplicates' }),
-      body: JSON.stringify(body)
-    });
+    var data = { id: id };
+    if (done !== undefined) data.done = done;
+    if (owner !== undefined) data.owner = owner;
+    if (depts !== undefined) data.depts = depts;
+    if (deptOwners !== undefined) data.dept_owners = deptOwners;
+    // Check if document already exists
+    var existing = await tcbDb.collection('tasks').where({ id: id }).limit(1).get();
+    if (existing && existing.data && existing.data.length > 0) {
+      await tcbDb.collection('tasks').doc(existing.data[0]._id).update(data);
+    } else {
+      await tcbDb.collection('tasks').add(data);
+    }
   } catch(e) { console.warn('保存到云端失败:', e.message); }
 }
 
 async function supabaseDeleteAll(ids) {
+  if (!tcbReady) return;
   for (var i = 0; i < ids.length; i++) {
     try {
-      await fetch(TCB_API_BASE + '/tasks?id=eq.' + encodeURIComponent(ids[i]), {
-        method: 'DELETE', headers: TCB_HEADERS
-      });
+      var existing = await tcbDb.collection('tasks').where({ id: ids[i] }).limit(1).get();
+      if (existing && existing.data && existing.data.length > 0) {
+        await tcbDb.collection('tasks').doc(existing.data[0]._id).remove();
+      }
     } catch(e) {}
   }
 }
@@ -2260,6 +2280,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   loadFromLocalStorage();
   updateStats();
 
+  await ensureCloudBase();
   var cloudTasks = await supabaseGetAll();
   if (cloudTasks && cloudTasks.length > 0) {
     applyAllStates(cloudTasks);
