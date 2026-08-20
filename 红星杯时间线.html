@@ -1218,6 +1218,10 @@ body::before {
         <div class="tl-top"><span class="tl-name">整理所有提交的项目信息，催促未提交队伍</span><span class="tl-date">9月21日 — 9月22日</span></div>
         <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span></div>
       </div>
+      <div class="tl-item" data-phase="p1">
+        <div class="tl-top"><span class="tl-name">材料审核环节</span><span class="tl-date">9月22日</span></div>
+        <div class="tl-meta"><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">学术实践部</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">办公室</span><span class="tl-dept" style="background:var(--phase-1-bg);color:var(--phase-1)">科学之光技术联盟</span></div>
+      </div>
     </div>
 
     <!-- ====== PHASE 2: 路演准备 ====== -->
@@ -1543,7 +1547,7 @@ const SUPABASE_HEADERS = {
 };
 const POLL_INTERVAL = 10000;
 const STORAGE_PREFIX = 'hxb_2026_';
-const DEPT_LIST = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部'];
+const DEPT_LIST = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部', '科学之光技术联盟'];
 const WORK_GROUP_LIST = ['票务服务组', '现场秩序组', '互动引导组', '机动应急组', '摄像组', '工作组'];
 
 function makeKey(el) {
@@ -2585,7 +2589,7 @@ function buildDeptView() {
   // Split into departments vs work groups (路演当天)
   var WORK_GROUPS = ['票务服务组', '现场秩序组', '互动引导组', '机动应急组', '摄像组', '工作组'];
   // Custom department order (departments not listed will be appended by task count)
-  var DEPT_ORDER = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部', '未分配部门', '参赛队伍'];
+  var DEPT_ORDER = ['学术实践部', '办公室', '组织部', '宣传部', '文艺部', '生活权益部', '信息技术部', '研究生办公室', '体育部', '科学之光技术联盟', '未分配部门', '参赛队伍'];
   function deptSort(a, b) {
     var ai = DEPT_ORDER.indexOf(a), bi = DEPT_ORDER.indexOf(b);
     if (ai !== -1 && bi !== -1) return ai - bi;
